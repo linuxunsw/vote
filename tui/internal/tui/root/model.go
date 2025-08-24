@@ -3,6 +3,8 @@
 package root
 
 import (
+	"os"
+
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/linuxunsw/vote/tui/internal/tui/keys"
@@ -61,9 +63,11 @@ func New() tea.Model {
 func (r *root) Init() tea.Cmd {
 	r.loaded[r.current] = true
 
+	windowTitle := os.Getenv("EVENT_NAME")
+
 	return tea.Batch(
 		r.pages[r.current].Init(),
-		tea.SetWindowTitle("vote"), // TODO: set to title of event e.g. agm/egm (based on env?)
+		tea.SetWindowTitle(windowTitle),
 	)
 }
 
@@ -78,8 +82,8 @@ func (r *root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// INFO: this repetition is temporary to make the form work
 	// as the form needs more messages than just the single keypress
-	// msg passed to the model - so we just send through these
-	// remaining 'not global' messages to the currently shown model
+	// msg passed to the model - so we just temporarily send through
+	// the remaining 'not global' messages to the currently shown model
 	updated, cmd := r.pages[r.current].Update(msg)
 	r.pages[r.current] = updated
 
