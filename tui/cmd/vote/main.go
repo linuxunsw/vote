@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	// "github.com/charmbracelet/log"
-	_ "github.com/jpfuentes2/go-env/autoload"
-	"os"
+	_ "github.com/joho/godotenv/autoload"
 
 	"github.com/linuxunsw/vote/tui/internal/tui/root"
 )
