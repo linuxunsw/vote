@@ -8,7 +8,3 @@ const (
 	PageForm     PageID = "form"
 	PageSubmit   PageID = "submit"
 )
-
-type PageChangeMsg struct {
-	ID PageID
-}
