@@ -19,6 +19,7 @@ const (
 	PageSubmit PageID = "submit"
 )
 
+/*
 type data struct {
 	zID     string
 	name    string
@@ -28,19 +29,16 @@ type data struct {
 
 	statement string
 	url       string
-}
+}*/
 
 type root struct {
-	wWidth  int
-	wHeight int
-	keyMap  keys.KeyMap
+	keyMap keys.KeyMap
 
-	pages    map[PageID]tea.Model
-	loaded   map[PageID]bool
-	current  PageID
-	previous PageID
+	pages   map[PageID]tea.Model
+	loaded  map[PageID]bool
+	current PageID
 
-	data data
+	// data data
 }
 
 func New() tea.Model {
