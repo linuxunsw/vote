@@ -1,0 +1,32 @@
+name: Handoff
+on: pull_request
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    outputs:
+      category: ${{ steps.changed-file-extensions.outputs.category }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v46
+      - name: Get extensions of changed files
+        id: changed-file-extensions
+        run: |
+          category=
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            ext="${file##*.}"
+            case $ext in
+              go)
+                category+=" Go";;
+              *)
+                echo "Unable to check syntax of $file.";;
+            esac
+          done
+          echo "category=$category" >> $GITHUB_OUTPUT
+  go:
+    needs: handoff
+    if: contains(needs.handoff.outputs.category, 'Go')
+    uses: ./.github/workflows/Golint.yml
