@@ -19,11 +19,16 @@ func main() {
 		fmt.Println("fatal:", err)
 		os.Exit(1)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("error closing log file: %v", err)
+		}
+	}()
 
 	p := tea.NewProgram(root.New(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal("fatal:", err)
 		os.Exit(1)
 	}
+
 }
