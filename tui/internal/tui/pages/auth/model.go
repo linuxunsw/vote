@@ -1,40 +1,31 @@
-// TODO: save value from form to root's data
 package auth
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
+	"github.com/linuxunsw/vote/tui/internal/tui/validation"
 )
 
-type state int
+type authModel struct {
+	wWidth  int
+	wHeight int
 
-const (
-	initalising state = iota
-	ready
-)
-
-type auth struct {
 	form *huh.Form
-
-	state state
-}
-
-type SendAuthMsg struct {
-	ZID string
 }
 
 func New() tea.Model {
-	model := &auth{
-		state: initalising,
-	}
+	model := &authModel{}
 
+	// Create form
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
 				Key("zid").
-				Title("what's your zid?"),
+				Title("what's your zid?").
+				Validate(validation.ZID),
 		),
 	).WithTheme(huh.ThemeBase16())
 
@@ -43,38 +34,41 @@ func New() tea.Model {
 	return model
 }
 
-func (a *auth) Init() tea.Cmd {
-	return a.form.Init()
+// Initialise form
+func (m *authModel) Init() tea.Cmd {
+	return m.form.Init()
 }
 
-func (a *auth) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	form, cmd := a.form.Update(msg)
+	// Pass the message to the form model
+	form, cmd := m.form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
 		cmds = append(cmds, cmd)
-		a.form = f
+		m.form = f
 	}
 
-	if a.form.State == huh.StateCompleted {
-		zid := a.form.GetString("zid")
-		return a, tea.Batch(
-			func() tea.Msg { return SendAuthMsg{ZID: zid} },
-			func() tea.Msg { return pages.PageChangeMsg{ID: pages.PageAuthCode} },
+	// If we've completed the form, send the form data to root and change the page
+	if m.form.State == huh.StateCompleted {
+		zid := m.form.GetString("zid")
+		return m, tea.Batch(
+			func() tea.Msg { return messages.SendAuthMsg{ZID: zid} },
+			func() tea.Msg { return messages.PageChangeMsg{ID: pages.PageAuthCode} },
 		)
 	}
 
+	// Handle remaining bubble tea commands
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		a.wHeight = msg.Height
-		a.wWidth = msg.Width
-		a.state = ready
+		m.wHeight = msg.Height
+		m.wWidth = msg.Width
 	}
 
-	return a, tea.Batch(cmds...)
+	return m, tea.Batch(cmds...)
 }
 
-func (a *auth) View() string {
-	// set content to spinner
-	return styles.FormStyle.Render(a.form.View())
+// Display form
+func (m *authModel) View() string {
+	return styles.FormStyle.Render(m.form.View())
 }

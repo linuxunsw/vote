@@ -1,5 +1,3 @@
-// TODO: move between pages
-
 package root
 
 import (
@@ -11,122 +9,149 @@ import (
 
 	"github.com/linuxunsw/vote/tui/internal/tui/components"
 	"github.com/linuxunsw/vote/tui/internal/tui/keys"
+	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/auth"
-	authcode "github.com/linuxunsw/vote/tui/internal/tui/pages/authCode"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/authcode"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/form"
 )
 
-/*
-type data struct {
-	zID     string
-	name    string
-	email   string
-	discord string
-	roles   []bool
+// Form data
+type formData struct {
+	zID string
+	// name    string
+	// email   string
+	// discord string
+	// roles   []bool
 
-	statement string
-	url       string
-}*/
+	// statement string
+	// url       string
+}
 
-type root struct {
-	keyMap keys.KeyMap
+type rootModel struct {
+	wWidth  int
+	wHeight int
+	keyMap  keys.KeyMap
 
 	pages  map[pages.PageID]tea.Model
 	loaded map[pages.PageID]bool
 
-	current  pages.PageID
-	previous pages.PageID
+	current pages.PageID
 
-	// data data
+	isAuthenticated bool
+
+	data formData
 }
 
 func New() tea.Model {
 	keyMap := keys.DefaultKeyMap()
+
+	// Load each page
 	pageMap := map[pages.PageID]tea.Model{
 		pages.PageAuth:     auth.New(),
 		pages.PageAuthCode: authcode.New(),
+		pages.PageForm:     form.New(),
 	}
 
-	model := &root{
-		keyMap:  keyMap,
-		pages:   pageMap,
-		loaded:  make(map[pages.PageID]bool),
-		current: pages.PageAuth,
+	model := &rootModel{
+		keyMap:          keyMap,
+		pages:           pageMap,
+		isAuthenticated: false,
+		loaded:          make(map[pages.PageID]bool),
+		current:         pages.PageAuth,
 	}
 
 	return model
 
 }
-
-func (r *root) Init() tea.Cmd {
-	r.loaded[r.current] = true
+func (m *rootModel) Init() tea.Cmd {
+	m.loaded[m.current] = true
 
 	windowTitle := os.Getenv("EVENT_NAME")
 
 	return tea.Batch(
-		r.pages[r.current].Init(),
+		m.pages[m.current].Init(),
 		tea.SetWindowTitle(windowTitle),
 	)
 }
 
-func (r *root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// Handles all messages recieved by the app
+func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		return r, r.handleKeyMsg(msg)
+		return m, m.handleKeyMsg(msg)
 	case tea.WindowSizeMsg:
-		return r, r.handleWindowSizeMsg(msg)
-	case pages.PageChangeMsg:
-		return r, r.movePage(msg.ID)
-	case auth.SendAuthMsg:
-		r.data.zID = msg.ZID
+		return m, m.handleWindowSizeMsg(msg)
+	case messages.PageChangeMsg:
+		return m, m.movePage(msg.ID)
+	case messages.SendAuthMsg:
+		m.data.zID = msg.ZID
 		// TODO: send req to api with zid
-		return r, cmd
+		return m, cmd
+	case messages.CheckOTPMsg:
+		// TODO: send req to api with otp, set authenticated to true on this condition
+		m.isAuthenticated = true
+		return m, func() tea.Msg { return messages.AuthenticatedMsg{} }
 	}
 
-	updated, cmd := r.pages[r.current].Update(msg)
-	r.pages[r.current] = updated
+	// Pass any remaining messages to the current model
+	updated, cmd := m.pages[m.current].Update(msg)
+	m.pages[m.current] = updated
 
 	cmds = append(cmds, cmd)
-	return r, tea.Batch(cmds...)
+	return m, tea.Batch(cmds...)
 }
 
-func (r *root) handleKeyMsg(msg tea.KeyMsg) tea.Cmd {
+// Displays the header, current model's content and a footer if the user is authenticated
+func (m *rootModel) View() string {
+	// Create footer with the user's zID if authenticated
+	var footer string
+	if m.isAuthenticated {
+		footer = components.ShowFooter(m.data.zID, m.wWidth)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Top, components.ShowHeader(m.wWidth), m.pages[m.current].View(), footer)
+}
+
+// Handles any global keybinds as defined in `m.keyMap`, then passes down
+// to the current 'page' (model)
+func (m *rootModel) handleKeyMsg(msg tea.KeyMsg) tea.Cmd {
 	switch {
-	case key.Matches(msg, r.keyMap.Quit):
+	case key.Matches(msg, m.keyMap.Quit):
 		return tea.Quit
 	default:
-		updated, cmd := r.pages[r.current].Update(msg)
-		r.pages[r.current] = updated
+		updated, cmd := m.pages[m.current].Update(msg)
+		m.pages[m.current] = updated
 		return cmd
 	}
 }
 
-func (r *root) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
-	r.wWidth = msg.Width
-	r.wHeight = msg.Height
+// Sets the window size in the rootModel, then passes down to the current
+// 'page' (model)
+func (m *rootModel) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
+	m.wWidth = msg.Width
+	m.wHeight = msg.Height
 
-	// also pass to the current model
-	updated, cmd := r.pages[r.current].Update(msg)
-	r.pages[r.current] = updated
+	// Pass the WindowSizeMsg to the current model
+	updated, cmd := m.pages[m.current].Update(msg)
+	m.pages[m.current] = updated
 	return cmd
 }
 
-func (r *root) movePage(pageID pages.PageID) tea.Cmd {
-	r.current = pageID
+// Switches current page given a pageID
+func (m *rootModel) movePage(pageID pages.PageID) tea.Cmd {
+	m.current = pageID
 
+	// If we haven't initialised the model before, do so
 	var cmds []tea.Cmd
-	if !r.loaded[r.current] {
-		cmd := r.pages[r.current].Init()
+	if !m.loaded[m.current] {
+		cmd := m.pages[m.current].Init()
 		cmds = append(cmds, cmd)
-		r.loaded[r.current] = true
+		m.loaded[m.current] = true
 	}
 
 	return tea.Batch(cmds...)
-}
-
-func (r *root) View() string {
-	return lipgloss.JoinVertical(lipgloss.Top, components.ShowHeader(r.wWidth), r.pages[r.current].View())
 }
