@@ -8,7 +8,10 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
 )
 
-type authModel struct {
+type auth struct {
+	wWidth  int
+	wHeight int
+
 	form *huh.Form
 
 	zid string
