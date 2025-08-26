@@ -9,9 +9,6 @@ import (
 )
 
 type auth struct {
-	wWidth  int
-	wHeight int
-
 	form *huh.Form
 
 	zid string
