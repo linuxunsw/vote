@@ -1,0 +1,16 @@
+name: Golint
+on: workflow_call
+jobs:
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          fail_level: any
+          filter_mode: nofilter
+          workdir: tui/
