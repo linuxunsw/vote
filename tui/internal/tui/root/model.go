@@ -11,23 +11,18 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/auth"
 )
 
-type PageID string
+// Form data
+type formData struct {
+	zID string
 
-const (
-	PageAuth   PageID = "auth"
-	PageForm   PageID = "form"
-	PageSubmit PageID = "submit"
-)
+	// TODO: add submission to remaining fields
 
-type data struct {
-	zID     string
-	name    string
-	email   string
-	discord string
-	roles   []bool
-
-	statement string
-	url       string
+	// name    string
+	// email   string
+	// discord string
+	// roles   []bool
+	// statement string
+	// url       string
 }
 
 type root struct {
@@ -40,7 +35,7 @@ type root struct {
 	current  PageID
 	previous PageID
 
-	data data
+	data formData
 }
 
 func New() tea.Model {
