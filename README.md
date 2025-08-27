@@ -4,13 +4,17 @@
 
 * zID verification of users
 * perform nominations and voting
-* multiple client options
+* multiple client options + email nomination handling
 
 ## setup
 
 ### clients
 
-**vote** offers two complete client options: a terminal interface and a web interface. email nominations are automatically handled 🪄
+**vote** offers two complete client options: 
+- a tui (terminal) interface, and
+- a web interface
+
+email nominations are automatically handled with a cloudflare email worker 🪄
 
 #### tui
 
