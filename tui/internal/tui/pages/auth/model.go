@@ -3,10 +3,10 @@ package auth
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
-	"github.com/linuxunsw/vote/tui/internal/tui/validation"
 )
 
 type authModel struct {
@@ -17,19 +17,9 @@ type authModel struct {
 }
 
 func New() tea.Model {
-	model := &authModel{}
-
-	// Create form
-	form := huh.NewForm(
-		huh.NewGroup(
-			huh.NewInput().
-				Key("zid").
-				Title("what's your zid?").
-				Validate(validation.ZID),
-		),
-	).WithTheme(huh.ThemeBase16())
-
-	model.form = form
+	model := &authModel{
+		form: forms.ZIDForm,
+	}
 
 	return model
 }
@@ -51,10 +41,10 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// If we've completed the form, send the form data to root and change the page
 	if m.form.State == huh.StateCompleted {
-		zid := m.form.GetString("zid")
+		zID := m.form.GetString("zid")
 		return m, tea.Batch(
-			func() tea.Msg { return messages.SendAuthMsg{ZID: zid} },
-			func() tea.Msg { return messages.PageChangeMsg{ID: pages.PageAuthCode} },
+			messages.SendAuth(zID),
+			messages.SendPageChange(pages.PageAuthCode),
 		)
 	}
 

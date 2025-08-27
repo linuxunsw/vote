@@ -1,0 +1,43 @@
+package forms
+
+import (
+	"github.com/charmbracelet/huh"
+	"github.com/linuxunsw/vote/tui/internal/tui/styles"
+	"github.com/linuxunsw/vote/tui/internal/tui/validation"
+)
+
+var NominationForm = huh.NewForm(
+	huh.NewGroup(
+		huh.NewInput().
+			Key("name").
+			Title("full name").
+			Validate(validation.NotEmpty),
+		huh.NewInput().
+			Key("email").
+			Title("preferred contact email").
+			Validate(validation.Email),
+		huh.NewInput().
+			Key("discord").
+			Title("discord username").
+			Validate(validation.NotEmpty),
+		huh.NewMultiSelect[string]().
+			Key("roles").
+			Title("roles you are nominating for").
+			Options(
+				huh.NewOption("president", "president"),
+				huh.NewOption("secretary", "secretary"),
+				huh.NewOption("treasurer", "treasurer"),
+				huh.NewOption("arc delegate", "arc_delegate"),
+				huh.NewOption("edi officer", "edi_officer"),
+				huh.NewOption("grievance officer", "grievance_officer"),
+			).
+			Validate(validation.Role),
+		huh.NewText().
+			Key("statement").
+			Title("please provide a candidate statement").
+			Validate(validation.NotEmpty),
+		huh.NewInput().
+			Key("url").
+			Title("url"),
+	),
+).WithTheme(styles.FormTheme())

@@ -1,7 +1,9 @@
 package messages
 
+import tea "github.com/charmbracelet/bubbletea"
+
 // Sends the user's form input (their zID) to the root model
-type SendAuthMsg struct {
+type AuthMsg struct {
 	ZID string
 }
 
@@ -10,6 +12,36 @@ type CheckOTPMsg struct {
 	OTP string
 }
 
-// Empty message for now unless data needs to be sent to UI
-// When UI recieves this message we know we can move on in the form
-type AuthenticatedMsg struct{}
+// Determines authenticated state - if there was an error we are
+// not authenticated
+type IsAuthenticatedMsg struct {
+	Error error
+}
+
+// Sends a message containing the user's zID for authentication
+func SendAuth(zID string) tea.Cmd {
+	msg := AuthMsg{
+		ZID: zID,
+	}
+
+	return func() tea.Msg { return msg }
+}
+
+// Sends a message containing the user's OTP input
+func SendCheckOTP(otp string) tea.Cmd {
+	msg := CheckOTPMsg{
+		OTP: otp,
+	}
+
+	return func() tea.Msg { return msg }
+}
+
+// Sends a message showing if the user was authenticated or
+// if there was an error in authentication
+func SendIsAuthenticated(err error) tea.Cmd {
+	msg := IsAuthenticatedMsg{
+		Error: err,
+	}
+
+	return func() tea.Msg { return msg }
+}

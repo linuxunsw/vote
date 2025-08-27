@@ -18,14 +18,8 @@ import (
 
 // Form data
 type formData struct {
-	zID string
-	// name    string
-	// email   string
-	// discord string
-	// roles   []bool
-
-	// statement string
-	// url       string
+	zID        string
+	submission messages.Submission
 }
 
 type rootModel struct {
@@ -87,14 +81,17 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.handleWindowSizeMsg(msg)
 	case messages.PageChangeMsg:
 		return m, m.movePage(msg.ID)
-	case messages.SendAuthMsg:
+	case messages.AuthMsg:
 		m.data.zID = msg.ZID
 		// TODO: send req to api with zid
 		return m, cmd
 	case messages.CheckOTPMsg:
 		// TODO: send req to api with otp, set authenticated to true on this condition
 		m.isAuthenticated = true
-		return m, func() tea.Msg { return messages.AuthenticatedMsg{} }
+		return m, tea.Batch(messages.SendIsAuthenticated(nil))
+	case messages.Submission:
+		m.data.submission = msg
+		return m, tea.Batch(messages.SendSubmissionResult("insert code here", nil))
 	}
 
 	// Pass any remaining messages to the current model

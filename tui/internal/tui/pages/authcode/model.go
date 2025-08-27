@@ -3,10 +3,10 @@ package authcode
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
-	"github.com/linuxunsw/vote/tui/internal/tui/validation"
 )
 
 type authCodeModel struct {
@@ -17,19 +17,9 @@ type authCodeModel struct {
 }
 
 func New() tea.Model {
-	model := &authCodeModel{}
-
-	form := huh.NewForm(
-		huh.NewGroup(
-			huh.NewInput().
-				Title("enter verification code").
-				Key("otp").
-				Description("a code has been sent to the email associated with your zid").
-				Validate(validation.OTP),
-		),
-	).WithTheme(huh.ThemeBase16())
-
-	model.form = form
+	model := &authCodeModel{
+		form: forms.OTPForm,
+	}
 
 	return model
 }
@@ -48,15 +38,13 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.wHeight = msg.Height
 		m.wWidth = msg.Width
-	case messages.AuthenticatedMsg:
-		return m, tea.Batch(func() tea.Msg { return messages.PageChangeMsg{ID: pages.PageForm} })
+	case messages.IsAuthenticatedMsg:
+		return m, messages.SendPageChange(pages.PageForm)
 	}
 
 	if m.form.State == huh.StateCompleted {
 		otp := m.form.GetString("otp")
-		return m, tea.Batch(
-			func() tea.Msg { return messages.CheckOTPMsg{OTP: otp} },
-		)
+		return m, messages.SendCheckOTP(otp)
 	}
 
 	return m, cmd
