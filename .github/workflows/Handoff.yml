@@ -23,6 +23,10 @@ jobs:
             case $ext in
               go)
                 category+=" Go";;
+              ts)
+                category+=" TypeScript";;
+              yml)
+                category+=" Yaml";;
               *)
                 echo "Unable to check syntax of $file.";;
             esac
@@ -36,3 +40,10 @@ jobs:
     uses: ./.github/workflows/Golint.yml
     with:
       subrepo: tui
+
+  web-tsc:
+    needs: handoff
+    uses: ./.github/workflows/Tsc.yml
+    if: contains(needs.handoff.outputs.category, 'TypeScript') && contains(needs.handoff.outputs.directory, 'web')
+    with:
+      subrepo: web

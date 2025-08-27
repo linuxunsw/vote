@@ -1,0 +1,22 @@
+name: Tsc
+on:
+  workflow_call:
+    inputs:
+      subrepo:
+        required: true
+        type: string
+jobs:
+  tsc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: tsc
+        uses: EPMatt/reviewdog-action-tsc@v1
+        with:
+          # Waiting on https://github.com/EPMatt/reviewdog-action-tsc/pull/282 to use fail_level instead
+          fail_on_error: true
+          filter_mode: nofilter
+          workdir: ${{ inputs.subrepo }}
