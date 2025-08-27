@@ -10,7 +10,7 @@
 
 ### clients
 
-**vote** offers two client options: a tui interface and a web interface.
+**vote** offers two complete client options: a terminal interface and a web interface. email nominations are automatically handled 🪄
 
 #### tui
 
@@ -48,7 +48,3 @@ TODO: backend setup guide
 ---
 
 made with ❤️ by the dev subcom @ [linux society](https://linuxunsw.org/)
-
-
-
-
