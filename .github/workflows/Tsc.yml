@@ -14,7 +14,7 @@ jobs:
           fetch-depth: 0
 
       - name: tsc
-        uses: EPMatt/reviewdog-action-tsc@v1
+        uses: EPMatt/reviewdog-action-tsc@89934d75ee11d1c298bce81efaa4fde6e00cc21c # v1.8.0
         with:
           # Waiting on https://github.com/EPMatt/reviewdog-action-tsc/pull/282 to use fail_level instead
           fail_on_error: true
