@@ -91,7 +91,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(messages.SendIsAuthenticated(nil))
 	case messages.Submission:
 		m.data.submission = msg
-		return m, tea.Batch(messages.SendSubmissionResult("insert code here", nil))
+		return m, tea.Quit
 	}
 
 	// Pass any remaining messages to the current model

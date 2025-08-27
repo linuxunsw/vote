@@ -51,7 +51,6 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, tea.Batch(
 			messages.SendSubmission(data),
-			tea.Quit,
 		)
 	}
 
