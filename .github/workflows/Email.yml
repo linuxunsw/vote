@@ -23,6 +23,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Changing workdir to email
+        run: cd email
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -35,7 +38,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: cd email && pnpm i
+        run: pnpm i
 
       - name: Typechecking
         run: pnpm check
