@@ -11,6 +11,7 @@ var ZIDForm = huh.NewForm(
 		huh.NewInput().
 			Key("zid").
 			Title("what's your zid?").
+			Placeholder("z5555555").
 			Validate(validation.ZID),
 	),
 ).WithTheme(styles.FormTheme())
