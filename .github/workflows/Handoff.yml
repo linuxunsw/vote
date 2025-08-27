@@ -1,5 +1,9 @@
 name: Handoff
-on: pull_request
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 jobs:
   handoff:
     runs-on: ubuntu-latest

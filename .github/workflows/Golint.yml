@@ -18,4 +18,5 @@ jobs:
         with:
           fail_level: any
           filter_mode: nofilter
+          reporter: github-check
           workdir: ${{ inputs.subrepo }}
