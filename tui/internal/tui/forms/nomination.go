@@ -35,9 +35,9 @@ var NominationForm = huh.NewForm(
 		huh.NewText().
 			Key("statement").
 			Title("please provide a candidate statement").
-			Validate(validation.NotEmpty),
+			Validate(huh.ValidateLength(50, 2000)),
 		huh.NewInput().
 			Key("url").
-			Title("url"),
+			Title("url (optional)"),
 	),
 ).WithTheme(styles.FormTheme())
