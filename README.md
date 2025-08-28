@@ -20,13 +20,7 @@ email nominations are automatically handled with a cloudflare email worker 🪄
 
 the tui interface is made to be served over ssh, and will do so by default. 
 
-install with go:
-
-```sh
-go install github.com/linuxunsw/vote/tui@latest
-```
-
-or, build from source:
+build from source:
 
 ```sh
 git clone https://github.com/linuxunsw/vote.git
