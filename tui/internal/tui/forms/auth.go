@@ -6,7 +6,8 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/validation"
 )
 
-func ZIDForm() *huh.Form {
+// Creates a new form to prompt the user for their zID
+func ZID() *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -18,7 +19,9 @@ func ZIDForm() *huh.Form {
 	).WithTheme(styles.FormTheme())
 }
 
-func OTPForm() *huh.Form {
+// Creates a new form to prompt the user for the OTP sent
+// to the email associated with their zID
+func OTP() *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().

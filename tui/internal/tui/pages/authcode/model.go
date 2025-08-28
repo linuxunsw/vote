@@ -18,7 +18,7 @@ type authCodeModel struct {
 
 func New() tea.Model {
 	model := &authCodeModel{
-		form: forms.OTPForm(),
+		form: forms.OTP(),
 	}
 
 	return model

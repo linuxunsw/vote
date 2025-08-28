@@ -20,7 +20,7 @@ type formModel struct {
 // server state (e.g. nomination vs voting)
 func New() tea.Model {
 	model := &formModel{
-		form: forms.NominationForm(),
+		form: forms.Nomination(),
 	}
 
 	return model
