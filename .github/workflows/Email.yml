@@ -42,3 +42,30 @@ jobs:
 
       - name: Typechecking
         run: pnpm check
+
+  format-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./email
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Check code formatting
+        run: pnpm check-format
