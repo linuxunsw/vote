@@ -18,7 +18,7 @@ type authModel struct {
 
 func New() tea.Model {
 	model := &authModel{
-		form: forms.ZIDForm(),
+		form: forms.ZID(),
 	}
 
 	return model

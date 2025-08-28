@@ -19,6 +19,7 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/root"
 )
 
+// Runs the program locally
 func Local() {
 	p := tea.NewProgram(root.New(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
@@ -26,6 +27,7 @@ func Local() {
 	}
 }
 
+// Runs the program served via wish (SSH)
 func SSH(host string, port string) {
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
@@ -44,7 +46,7 @@ func SSH(host string, port string) {
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	log.Info("Starting SSH server", "host", host, "port", port)
+	log.Info("Starting SSH server...", "host", host, "port", port)
 	go func() {
 		if err = s.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 			log.Error("Could not start server", "error", err)
@@ -53,7 +55,7 @@ func SSH(host string, port string) {
 	}()
 
 	<-done
-	log.Info("Stopping SSH server")
+	log.Info("Stopping SSH server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer func() { cancel() }()
 	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {

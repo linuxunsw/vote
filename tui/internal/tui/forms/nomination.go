@@ -6,7 +6,8 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/validation"
 )
 
-func NominationForm() *huh.Form {
+// Creates a form for the user's nomination information
+func Nomination() *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().

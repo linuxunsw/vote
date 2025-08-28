@@ -13,15 +13,15 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui"
 )
 
+// Default host and port
 const (
 	host = "0.0.0.0"
-	port = "23234"
+	port = "2222"
 )
 
 func main() {
-	// TODO: set up propper logging to file w/ charm logs
 
-	ssh := flag.Bool("ssh", false, "serve TUI over SSH")
+	local := flag.Bool("local", false, "run locally (no SSH server)")
 	sshHost := flag.String("host", host, "host")
 	sshPort := flag.String("port", port, "port")
 	flag.Parse()
@@ -37,7 +37,7 @@ func main() {
 		}
 	}()
 
-	if *ssh {
+	if *local != true {
 		tui.SSH(*sshHost, *sshPort)
 	} else {
 		tui.Local()
