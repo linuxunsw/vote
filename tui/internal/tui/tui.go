@@ -64,9 +64,6 @@ func SSH(host string, port string) {
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	// This should never fail, as we are using the activeterm middleware.
 	// pty, _, _ := s.Pty()
-
 	m := root.New()
-
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
-
 }
