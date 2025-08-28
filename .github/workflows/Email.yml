@@ -18,6 +18,9 @@ permissions:
 jobs:
   typecheck:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./email
     steps:
       - uses: actions/checkout@v5
         with:
@@ -33,10 +36,9 @@ jobs:
         with:
           node-version: 24
           cache: "pnpm"
-          cache-dependency-path: "email/pnpm-lock.yaml"
 
       - name: Install dependencies
-        run: cd email && pnpm i
+        run: pnpm i
 
       - name: Typechecking
-        run: cd email && pnpm check
+        run: pnpm check
