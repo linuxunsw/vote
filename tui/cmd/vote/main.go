@@ -14,14 +14,16 @@ import (
 )
 
 const (
-	defaultSSHAddr = "0.0.0.0:23234"
+	host = "0.0.0.0"
+	port = "23234"
 )
 
 func main() {
 	// TODO: set up propper logging to file w/ charm logs
 
 	ssh := flag.Bool("ssh", false, "serve TUI over SSH")
-	sshAddr := flag.String("addr", defaultSSHAddr, "SSH listen address (host:port)")
+	sshHost := flag.String("host", host, "host")
+	sshPort := flag.String("port", port, "port")
 	flag.Parse()
 
 	f, err := tea.LogToFile("debug.log", "debug")
@@ -36,7 +38,7 @@ func main() {
 	}()
 
 	if *ssh {
-		tui.SSH(*sshAddr)
+		tui.SSH(*sshHost, *sshPort)
 	} else {
 		tui.Local()
 	}

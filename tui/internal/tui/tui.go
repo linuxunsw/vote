@@ -3,17 +3,18 @@ package tui
 import (
 	"context"
 	"errors"
-	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
+	"github.com/charmbracelet/wish/activeterm"
 	"github.com/charmbracelet/wish/bubbletea"
-	"github.com/charmbracelet/wish/comment"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/linuxunsw/vote/tui/internal/tui/root"
 )
@@ -25,51 +26,47 @@ func Local() {
 	}
 }
 
-func SSH(address string) {
-	// Make a new server
-	server, err := wish.NewServer(
-		wish.WithAddress(address),
+func SSH(host string, port string) {
+	s, err := wish.NewServer(
+		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-			bubbletea.Middleware(handler),
+			bubbletea.Middleware(teaHandler),
+			activeterm.Middleware(),
 			logging.Middleware(),
-			comment.Middleware("session ended."),
 		),
+
+		ssh.AllocatePty(),
 	)
 	if err != nil {
-		log.Fatal("could not start server", err)
+		log.Fatal("could not start server,", err)
 	}
 
-	// graceful shutdown
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	log.Info("Starting SSH server", "host", host, "port", port)
 	go func() {
-		<-sig
-		log.Println("shutting down SSH server…")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := server.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-			log.Fatal("shutdown error", err)
+		if err = s.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+			log.Error("Could not start server", "error", err)
+			done <- nil
 		}
-		os.Exit(0)
 	}()
 
-	log.Println("SSH server listening", address)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-		log.Fatal("server error", "err", err)
+	<-done
+	log.Info("Stopping SSH server")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer func() { cancel() }()
+	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+		log.Error("Could not stop server", "error", err)
 	}
 }
 
-func handler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	_, winCh, _ := s.Pty()
+func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+	// This should never fail, as we are using the activeterm middleware.
+	// pty, _, _ := s.Pty()
 
 	m := root.New()
 
-	go func() {
-		for win := range winCh {
-			m.Update(tea.WindowSizeMsg{Width: win.Width, Height: win.Height})
-		}
-	}()
-
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
+
 }
