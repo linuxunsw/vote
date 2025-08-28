@@ -37,7 +37,7 @@ func main() {
 		}
 	}()
 
-	if *local != true {
+	if !*local {
 		tui.SSH(*sshHost, *sshPort)
 	} else {
 		tui.Local()

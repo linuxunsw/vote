@@ -18,28 +18,34 @@ email nominations are automatically handled with a cloudflare email worker 🪄
 
 #### tui
 
-clone the repo and create a `.env` file (see [the example](https://github.com/linuxunsw/vote/blob/main/tui/.env.example)). to build:
+the tui interface is made to be served over ssh, and will do so by default. 
 
-```bash
-cd tui
+install with go:
+
+```sh
+go install github.com/linuxunsw/vote/tui@latest
+```
+
+or, build from source:
+
+```sh
+git clone https://github.com/linuxunsw/vote.git
+cd ./vote/tui
 go build -o vote cmd/vote/main.go
 ./vote
 ```
 
-or, install with go:
+additionally, for development:
 
-```bash
-go install github.com/linuxunsw/vote/tui@latest
-```
-
-for development:
-
-```bash
-cd tui
+```sh
+git clone https://github.com/linuxunsw/vote.git
+cd ./vote/tui
 go run cmd/vote/main.go
 ```
 
-TODO: add hosting information
+to run locally without ssh, use flag `--local`
+
+to customise the form titles, set the environment variables `SOCIETY_NAME` and `EVENT_NAME`. if using a `.env` file, check out [the example](https://github.com/linuxunsw/vote/blob/main/tui/.env.example).
 
 #### web
 
