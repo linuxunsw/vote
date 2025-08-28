@@ -1,0 +1,25 @@
+{
+  "name": "email",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "test": "vitest",
+    "cf-typegen": "wrangler types",
+    "check": "tsc --noEmit",
+    "format": "prettier -w \"./**/*.{js,ts,mjs,mts,json,jsonc}\"",
+    "check-format": "prettier -c \"./**/*.{js,ts,mjs,mts,json,jsonc}\""
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.19",
+    "prettier": "^3.6.2",
+    "typescript": "^5.5.2",
+    "vitest": "~3.2.0",
+    "wrangler": "^4.32.0"
+  },
+  "dependencies": {
+    "mimetext": "^3.0.27"
+  }
+}
