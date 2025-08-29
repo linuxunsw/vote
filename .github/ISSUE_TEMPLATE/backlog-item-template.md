@@ -7,7 +7,11 @@ assignees: ''
 
 ---
 
-**Acceptance Criteria:**
+<!-- Notes are optional, remove the heading/text if there are none -->
+### Notes
+Replace this line with brief notes or details about the item.
+
+### Acceptance Criteria:
 
 - [ ] criteria 1
 - [ ] criteria 2
