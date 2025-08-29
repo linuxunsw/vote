@@ -13,26 +13,7 @@ import (
 )
 
 func main() {
-	viper.SetDefault("tui.host", "0.0.0.0")
-	viper.SetDefault("tui.port", "2222")
-	viper.SetDefault("tui.local", false)
-	viper.SetDefault("society", "$ linux society")
-	viper.SetDefault("event", "event name")
-
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$XDG_CONFIG_HOME/vote/")
-	viper.AddConfigPath("$HOME/.config/vote/")
-	viper.AddConfigPath(".")
-
-	err := viper.ReadInConfig()
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Println("No config file found")
-		} else {
-			log.Fatalln("Error reading config file: ", err)
-		}
-	}
+	loadConfig()
 
 	local := viper.GetBool("tui.local")
 	host := viper.GetString("tui.host")
@@ -55,4 +36,27 @@ func main() {
 		tui.Local()
 	}
 
+}
+
+func loadConfig() {
+	// Set default values
+	viper.SetDefault("tui.host", "0.0.0.0")
+	viper.SetDefault("tui.port", "2222")
+	viper.SetDefault("tui.local", false)
+	viper.SetDefault("society", "$ linux society")
+	viper.SetDefault("event", "event name")
+	
+	// Config name, filetype and path
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("$XDG_CONFIG_HOME/vote/")
+	viper.AddConfigPath("$HOME/.config/vote/")
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Println("No config file found")
+		} else {
+			log.Fatalln("Error reading config file: ", err)
+		}
+	}
 }

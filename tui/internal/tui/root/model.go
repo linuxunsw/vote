@@ -55,6 +55,11 @@ func New() tea.Model {
 	logger := log.New(os.Stderr)
 	logger.SetReportTimestamp(true)
 	logger.SetPrefix("app")
+	
+	logDebug := viper.GetBool("tui.debug")
+	if logDebug {
+		logger.SetLevel(log.DebugLevel)
+	}
 
 	model := &rootModel{
 		log:             logger,
@@ -89,16 +94,22 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		return m, m.handleWindowSizeMsg(msg)
 	case messages.PageChangeMsg:
+		m.log.Debug("page change", "msg", msg)
 		return m, m.movePage(msg.ID)
 	case messages.AuthMsg:
+		m.log.Debug("auth", "msg", msg)
 		m.data.zID = msg.ZID
 		// TODO: send req to api with zid
 		return m, cmd
 	case messages.CheckOTPMsg:
+		m.log.Debug("check otp", "msg", msg)
 		// TODO: send req to api with otp, set authenticated to true on this condition
+		// log when successfully/unsuccessfully authenticated
 		m.isAuthenticated = true
+		// log when someone successfully authenticates
 		return m, tea.Batch(messages.SendIsAuthenticated(nil))
 	case messages.Submission:
+		m.log.Debug("submission", "msg", msg)
 		m.data.submission = msg
 		return m, tea.Quit
 	}

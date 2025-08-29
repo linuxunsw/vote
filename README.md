@@ -18,8 +18,6 @@ email nominations are automatically handled with a cloudflare email worker 🪄
 
 #### tui
 
-the tui interface is made to be served over ssh, and will do so by default. 
-
 build from source:
 
 ```sh
@@ -37,9 +35,13 @@ cd ./vote/tui
 go run cmd/vote/main.go
 ```
 
-to run locally without ssh, use flag `--local`
+the tui interface is made to be served over ssh, and will do so by default. to run locally without ssh, include the following in your `config.yaml` (see [configuration](tui/README.md)):
 
-to customise the form titles, set the environment variables `SOCIETY_NAME` and `EVENT_NAME`. if using a `.env` file, check out [the example](https://github.com/linuxunsw/vote/blob/main/tui/.env.example).
+```yaml
+# config.yaml
+tui:
+  local: true
+```
 
 #### web
 
