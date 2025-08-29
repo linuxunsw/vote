@@ -2,14 +2,14 @@ package components
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
+	"github.com/spf13/viper"
 )
 
 func ShowHeader(width int) string {
-	societyName := os.Getenv("SOCIETY_NAME")
-	eventName := os.Getenv("EVENT_NAME")
+	societyName := viper.GetString("society")
+	eventName := viper.GetString("event")
 	headerContent := fmt.Sprintf("%s\n%s", societyName, eventName)
 	return styles.Header(width).Render(headerContent)
 }

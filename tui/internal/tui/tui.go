@@ -29,13 +29,17 @@ func Local() {
 
 // Runs the program served via wish (SSH)
 func SSH(host string, port string) {
+	log := log.New(os.Stderr)
+	log.SetReportTimestamp(true)
+	log.SetPrefix("server")
+
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
 			bubbletea.Middleware(teaHandler),
 			activeterm.Middleware(),
-			logging.Middleware(),
+			logging.StructuredMiddlewareWithLogger(log, log.GetLevel()),
 		),
 
 		ssh.AllocatePty(),
