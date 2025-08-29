@@ -1,15 +1,11 @@
 ---
-name: Backlog Item Template
-about: Describe this issue template's purpose here.
+name: Backlog Item
+about: Standard Template w/ Acceptance Criteria 
 title: 'Scope: Item Summary'
 labels: enhancement
 assignees: ''
 
 ---
-
-**As a** <role>,
-**I want** <goal>,
-**So that** <benefit>
 
 **Acceptance Criteria:**
 
