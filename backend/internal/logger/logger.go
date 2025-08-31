@@ -1,26 +1,44 @@
 package logger
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"log/slog"
+	"os"
+
+	"github.com/golang-cz/devslog"
+	"github.com/linuxunsw/vote/backend/internal/config"
 )
 
-func New(level, encoding string) (*zap.Logger, error) {
-	var zapLevel zapcore.Level
-	if err := zapLevel.UnmarshalText([]byte(level)); err != nil {
+func ParseLevel(s string) (slog.Level, error) {
+	var level slog.Level
+	err := level.UnmarshalText([]byte(s))
+	return level, err
+}
+
+// Creates a new log/slog logger, using devslog in dev environments for pretty printing.
+// Accepts config as well as initial handler options, which can be used to provide ReplaceAttrs.
+func New(cfg config.LoggerConfig, opts *slog.HandlerOptions) (*slog.Logger, error) {
+	parsedLevel, err := ParseLevel(cfg.Level)
+	if err != nil {
 		return nil, err
 	}
 
-	var cfg zap.Config
-	if encoding == "console" {
-		cfg = zap.NewDevelopmentConfig()
-		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	opts.Level = parsedLevel
+	opts.AddSource = cfg.AddSource
+
+	var h slog.Handler
+	if cfg.PrettyPrint == true {
+		// devslog provides colorful text handler implementing slog.Handler
+		h = devslog.NewHandler(os.Stdout, &devslog.Options{
+			SortKeys:           true,
+			MaxErrorStackTrace: 5,
+			MaxSlicePrintSize:  20,
+			HandlerOptions:     opts,
+		})
 	} else {
-		cfg = zap.NewProductionConfig()
+		h = slog.NewJSONHandler(os.Stdout, opts)
 	}
 
-	cfg.Level = zap.NewAtomicLevelAt(zapLevel)
-	cfg.Encoding = encoding
+	logger := slog.New(h)
 
-	return cfg.Build()
+	return logger, nil
 }

@@ -18,7 +18,8 @@ type APIConfig struct {
 }
 
 type ServerConfig struct {
-	Port int
+	Port       int
+	Production bool
 }
 
 type DatabaseConfig struct {
@@ -40,8 +41,17 @@ type MailerConfig struct {
 }
 
 type LoggerConfig struct {
-	Level    string
-	Encoding string
+	Level       string
+	PrettyPrint bool
+	AddSource   bool
+	// sets httplog formatting flag, and adds top-level attrs which are useful for production
+	Concise bool
+	// enables loggging of request/response bodies
+	LogHTTPBody bool
+	Debug       struct {
+		Header      string
+		HeaderValue string
+	}
 }
 
 func Load() Config {
@@ -68,8 +78,18 @@ func Load() Config {
 			FromEmail:    GetString("MAILER_FROM_EMAIL", ""),
 		},
 		Logger: LoggerConfig{
-			Level:    GetString("LOGGER_LEVEL", "debug"),
-			Encoding: GetString("LOGGER_ENCODING", "console"),
+			Level:       GetString("LOGGER_LEVEL", "debug"),
+			PrettyPrint: GetBool("LOGGER_PRETTY_PRINT", true),
+			AddSource:   GetBool("LOGGER_ADD_SOURCES", false),
+			Concise:     GetBool("LOGGER_CONCISE", true),
+			LogHTTPBody: GetBool("LOGGER_LOG_HTTP_BODY", true),
+			Debug: struct {
+				Header      string
+				HeaderValue string
+			}{
+				Header:      GetString("LOGGER_DEBUG_HEADER", "X-Vote-Debug"),
+				HeaderValue: GetString("LOGGER_DEBUG_HEADER_VALUE", "show-body"),
+			},
 		},
 	}
 

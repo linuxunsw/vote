@@ -4,17 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/go-chi/httplog/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	v1 "github.com/linuxunsw/vote/backend/internal/api/v1"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/logger"
 	"github.com/pressly/goose/v3"
-	"go.uber.org/zap"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
@@ -32,18 +34,30 @@ type Options struct {
 func main() {
 	cfg := config.Load()
 
-	// logging
-	log, err := logger.New(cfg.Logger.Level, cfg.Logger.Encoding)
+	// intial cfg for both logger and httplog middleware
+	logFormat := httplog.SchemaOTEL.Concise(cfg.Logger.Concise)
+	loggerOpts := &slog.HandlerOptions{
+		ReplaceAttr: logFormat.ReplaceAttr,
+	}
+
+	// init logger
+	logger, err := logger.New(cfg.Logger, loggerOpts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing logger: %v\n", err)
 		os.Exit(1)
 	}
-	slog := log.Sugar()
-	defer slog.Sync()
+
+	// set useful log attrs in prod
+	if !cfg.Logger.Concise {
+		logger = logger.With(
+			slog.String("app", "vote-api"),
+			slog.String("version", cfg.API.Version),
+		)
+	}
 
 	// db
 	// FIXME: implement
-	// pool, err := db.Connect(cfg.Database.Address)
+	// pool, err := db.Connect(cfg.Database)
 	// if err != nil {
 	// 	log.Fatal("Unable to connect to database", zap.Error(err))
 	// }
@@ -54,12 +68,18 @@ func main() {
 	// emailClient := TODO:
 
 	// start healthcheck
-	health := handlers.NewChecker(slog, nil)
+	health := handlers.NewChecker(logger, nil)
 	defer health.Stop()
 
 	// init api
 	router := http.NewServeMux()
 	api := humago.New(router, huma.DefaultConfig("Vote API", cfg.API.Version))
+
+	err = middleware.AddGlobalMiddleware(api, cfg.Logger, logger, logFormat)
+	if err != nil {
+		logger.Error("Unable to add global middleware", "error", err)
+		os.Exit(1)
+	}
 
 	v1.Register(api, nil, nil, health)
 
@@ -71,9 +91,10 @@ func main() {
 		}
 
 		hooks.OnStart(func() {
-			slog.Infow("Starting server", "Port", opts.Port)
+			logger.Info("Starting server", "Port", opts.Port)
 			if err := server.ListenAndServe(); err != http.ErrServerClosed {
-				slog.Fatal("Server error", zap.Error(err))
+				logger.Error("Server error", "error", err)
+				os.Exit(1)
 			}
 		})
 
@@ -82,7 +103,7 @@ func main() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := server.Shutdown(ctx); err != nil {
-				slog.Error("Graceful shutdown failed", zap.Error(err))
+				logger.Error("Graceful shutdown failed", "error", err)
 			}
 		})
 	})
@@ -94,7 +115,7 @@ func main() {
 
 	// Add commands to cli
 	cmd.AddCommand(createOpenAPICommand(api))
-	cmd.AddCommand(createMigrateCommand(slog, cfg))
+	cmd.AddCommand(createMigrateCommand(logger, cfg))
 
 	// TODO: register more commands
 	// i.e running tests(?), (de)registering admins(?)
@@ -117,7 +138,7 @@ func createOpenAPICommand(api huma.API) *cobra.Command {
 	}
 }
 
-func createMigrateCommand(log *zap.SugaredLogger, cfg config.Config) *cobra.Command {
+func createMigrateCommand(log *slog.Logger, cfg config.Config) *cobra.Command {
 	return &cobra.Command{
 		Use:   "migrate",
 		Short: "Run database migrations",
@@ -125,13 +146,13 @@ func createMigrateCommand(log *zap.SugaredLogger, cfg config.Config) *cobra.Comm
 			// Goose requires a standard *sql.DB object instead of pgx stuff.
 			db, err := sql.Open("pgx", cfg.Database.Address)
 			if err != nil {
-				log.Fatalf("Failed to connect to DB for migration: %v\n", err)
+				log.Error("Failed to connect to DB for migration", "error", err)
 				os.Exit(1)
 			}
 			defer db.Close()
 
 			if err := goose.SetDialect("postgres"); err != nil {
-				log.Errorf("Failed to set Goose dialect: %v\n", err)
+				log.Error("Failed to set Goose dialect", "error", err)
 				os.Exit(1)
 			}
 
@@ -139,7 +160,7 @@ func createMigrateCommand(log *zap.SugaredLogger, cfg config.Config) *cobra.Comm
 			// FIXME: use correct directory
 			fmt.Println("Running migrations...")
 			if err := goose.Up(db, "db/migrations"); err != nil {
-				log.Errorf("Migration failed: %v\n", err)
+				log.Error("Migration failed", "error", err)
 				os.Exit(1)
 			}
 			log.Info("Migrations applied successfully!")
