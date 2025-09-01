@@ -13,7 +13,7 @@ func ZID() *huh.Form {
 			huh.NewInput().
 				Key("zid").
 				Title("what's your zid?").
-				Placeholder("z5555555").
+				Placeholder("z1234567").
 				Validate(validation.ZID),
 		),
 	).WithTheme(styles.FormTheme())

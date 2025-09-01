@@ -10,5 +10,4 @@ func ShowFooter(zid string, width int) string {
 		content = "currently signed in as: " + zid
 	}
 	return styles.FooterStyle.Width(width).Render(content)
-
 }
