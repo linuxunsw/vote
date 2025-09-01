@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -31,8 +30,7 @@ type formData struct {
 }
 
 type rootModel struct {
-	user string
-	log  *log.Logger
+	log *log.Logger
 
 	wWidth  int
 	wHeight int
@@ -51,16 +49,6 @@ type rootModel struct {
 	loading        bool
 
 	data formData
-}
-
-// Simulate API call
-// API calls will need to be done in tea.Cmds like so
-func testAPICall() tea.Cmd {
-	return func() tea.Msg {
-		// Simulate API call delay
-		time.Sleep(3 * time.Second)
-		return messages.RequestOTPResultMsg{Error: nil}
-	}
 }
 
 func New(user string) tea.Model {
@@ -166,6 +154,8 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.loading = true
 
+		m.data.submission = msg
+
 		return m, client.SubmitForm(msg)
 	case messages.SubmitFormResultMsg:
 		m.log.Debug("SubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
@@ -191,7 +181,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// Displays the header, current model's content and a footer if the	user is authenticated
+// Displays the header, current model's content and a footer if the user is authenticated
 func (m *rootModel) View() string {
 	var footer string
 	if m.isAuthenticated {
@@ -204,9 +194,14 @@ func (m *rootModel) View() string {
 	if m.loading {
 		w, h := m.findContentSize()
 
-		style := lipgloss.NewStyle().Align(lipgloss.Center).Width(w).Height(h)
+		style := lipgloss.NewStyle().
+			Align(lipgloss.Center).
+			Width(w).
+			Height(h)
+
 		loadingSpinner = style.Render(components.GetPageMsg(m.current))
 		content = strings.TrimRightFunc(loadingSpinner, unicode.IsSpace) + m.loadingSpinner.View()
+
 		content = lipgloss.NewStyle().AlignVertical(lipgloss.Center).Height(h).Render(content)
 
 	} else {

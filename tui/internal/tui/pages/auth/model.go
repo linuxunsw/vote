@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -20,19 +19,15 @@ type authModel struct {
 
 	form *huh.Form
 
-	isSubmitted    bool
-	loadingSpinner spinner.Model
+	isSubmitted bool
 }
 
 func New(logger *log.Logger) tea.Model {
 	model := &authModel{
-		logger:         logger,
-		form:           forms.ZID(),
-		isSubmitted:    false,
-		loadingSpinner: spinner.New(),
+		logger:      logger,
+		form:        forms.ZID(),
+		isSubmitted: false,
 	}
-
-	model.loadingSpinner.Spinner = spinner.Dot
 
 	return model
 }
@@ -41,7 +36,6 @@ func New(logger *log.Logger) tea.Model {
 func (m *authModel) Init() tea.Cmd {
 	return tea.Batch(
 		m.form.Init(),
-		m.loadingSpinner.Tick,
 		tea.WindowSize(),
 	)
 }
