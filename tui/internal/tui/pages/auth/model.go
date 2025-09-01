@@ -62,7 +62,7 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.isSubmitted = true
 
-		return m, messages.SendAuth(zID)
+		return m, messages.SendRequestOTP(zID)
 	}
 
 	// Handle remaining bubble tea commands

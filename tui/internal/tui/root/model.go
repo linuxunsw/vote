@@ -52,19 +52,13 @@ type rootModel struct {
 	data formData
 }
 
-// INFO: testing stuff for "fake" api call so we can
-// test spinner - will be replaced when api complete
-type testCompleteMsg struct {
-	err error
-}
-
 // Simulate API call
 // API calls will need to be done in tea.Cmds like so
 func testAPICall() tea.Cmd {
 	return func() tea.Msg {
 		// Simulate API call delay
 		time.Sleep(3 * time.Second)
-		return testCompleteMsg{err: nil}
+		return messages.RequestOTPResultMsg{Error: nil}
 	}
 }
 
@@ -130,27 +124,58 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case messages.PageChangeMsg:
 		m.log.Debug("PageChangeMsg", "msg", msg)
 		return m, m.movePage(msg.ID)
-	case messages.AuthMsg:
-		m.log.Debug("AuthMsg", "msg", msg)
+	case messages.RequestOTPMsg:
+		m.log.Debug("RequestOTPMsg", "zID", msg.ZID)
 		m.data.zID = msg.ZID
+
 		m.loading = true
 
+		// TODO: Call API here in a tea.Cmd
 		return m, testAPICall()
-	case messages.CheckOTPMsg:
-		m.log.Debug("CheckOTPMsg", "msg", msg)
-		// TODO: send req to api with otp, set authenticated to true on this condition
-		// log when successfully/unsuccessfully authenticated
-		m.isAuthenticated = true
-		// log when someone successfully authenticates
-		return m, tea.Batch(messages.SendIsAuthenticated(nil))
-	case testCompleteMsg:
-		m.log.Debug("testCompleteMsg", "msg", msg)
+	case messages.RequestOTPResultMsg:
+		m.log.Debug("RequestOTPResultMsg", "error", msg.Error)
+		// only change page if we didn't error
 		m.loading = false
-		return m, messages.SendPageChange(pages.PageAuthCode)
+
+		if msg.Error == nil {
+			return m, messages.SendPageChange(pages.PageAuthCode)
+		}
+	case messages.VerifyOTPMsg:
+		m.log.Debug("VerifyOTPMsg", "OTP", msg.OTP)
+
+		m.loading = true
+
+		// TODO: Call API here in a tea.Cmd
+		return m, messages.SendVerifyOTPResult(nil)
+	case messages.VerifyOTPResultMsg:
+		m.log.Debug("VerifyOTPResultMsg", "error", msg.Error)
+
+		m.loading = false
+
+		if msg.Error == nil {
+			return m, messages.SendPageChange(pages.PageForm)
+		}
 	case messages.Submission:
-		m.log.Debug("SubmissionMsg", "msg", msg)
-		m.data.submission = msg
-		return m, tea.Quit
+		m.log.Debug(
+			"Submission",
+			"zid", m.data.zID,
+			"name", msg.Name,
+			"roles", msg.Roles,
+		)
+
+		m.loading = true
+
+		// TODO: Call API here in a tea.Cmd
+		return m, messages.SendSubmitFormResult("refCode", nil)
+	case messages.SubmitFormResultMsg:
+		m.log.Debug("SubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
+
+		m.loading = false
+
+		if msg.Error == nil {
+			// TODO: Replace with page change
+			return m, tea.Quit
+		}
 	case spinner.TickMsg:
 		m.loadingSpinner, cmd = m.loadingSpinner.Update(msg)
 		return m, cmd
@@ -164,7 +189,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// Displays the header, current model's content and a footer if the user is authenticated
+// Displays the header, current model's content and a footer if the	user is authenticated
 func (m *rootModel) View() string {
 	// footer only when authed
 	var footer string
@@ -179,7 +204,7 @@ func (m *rootModel) View() string {
 		w, h := m.findContentSize()
 
 		style := lipgloss.NewStyle().Align(lipgloss.Center).Width(w).Height(h)
-		loadingSpinner = style.Render("requesting otp")
+		loadingSpinner = style.Render(components.GetPageMsg(m.current))
 		content = strings.TrimRightFunc(loadingSpinner, unicode.IsSpace) + m.loadingSpinner.View()
 		content = lipgloss.NewStyle().AlignVertical(lipgloss.Center).Height(h).Render(content)
 

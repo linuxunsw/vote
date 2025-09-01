@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
-	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
 )
 
@@ -45,8 +44,6 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		formWidth := lipgloss.Width(m.form.View())
 		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
 		return m, nil
-	case messages.IsAuthenticatedMsg:
-		return m, messages.SendPageChange(pages.PageForm)
 	case tea.WindowSizeMsg:
 		return m, nil
 	}
@@ -57,7 +54,7 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.form.State == huh.StateCompleted {
 		otp := m.form.GetString("otp")
-		return m, messages.SendCheckOTP(otp)
+		return m, messages.SendVerifyOTP(otp)
 	}
 
 	return m, cmd
