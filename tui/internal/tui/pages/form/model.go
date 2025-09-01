@@ -54,11 +54,12 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 	}
 
-	// Handle remaining bubble tea commands
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
+	case messages.PageContentSizeMsg:
 		m.wHeight = msg.Height
 		m.wWidth = msg.Width
+
+		m.form = m.form.WithHeight(m.wHeight).WithWidth(m.wWidth)
 	}
 
 	return m, cmd

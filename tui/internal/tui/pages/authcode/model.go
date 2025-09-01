@@ -3,6 +3,8 @@ package authcode
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
@@ -10,15 +12,18 @@ import (
 )
 
 type authCodeModel struct {
+	logger *log.Logger
+
 	wWidth  int
 	wHeight int
 
 	form *huh.Form
 }
 
-func New() tea.Model {
+func New(logger *log.Logger) tea.Model {
 	model := &authCodeModel{
-		form: forms.OTP(),
+		logger: logger,
+		form:   forms.OTP(),
 	}
 
 	return model
@@ -29,17 +34,25 @@ func (m *authCodeModel) Init() tea.Cmd {
 }
 
 func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case messages.PageContentSizeMsg:
+		log.Debug("PageContentSizeMsg", "msg", msg)
+		m.wHeight = msg.Height
+		m.wWidth = msg.Width
+		m.form = m.form.WithHeight(m.wHeight).WithWidth(m.wWidth)
+
+		formHeight := lipgloss.Height(m.form.View())
+		formWidth := lipgloss.Width(m.form.View())
+		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
+		return m, nil
+	case messages.IsAuthenticatedMsg:
+		return m, messages.SendPageChange(pages.PageForm)
+	case tea.WindowSizeMsg:
+		return m, nil
+	}
 	form, cmd := m.form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
 		m.form = f
-	}
-
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.wHeight = msg.Height
-		m.wWidth = msg.Width
-	case messages.IsAuthenticatedMsg:
-		return m, messages.SendPageChange(pages.PageForm)
 	}
 
 	if m.form.State == huh.StateCompleted {

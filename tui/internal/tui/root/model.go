@@ -1,8 +1,13 @@
 package root
 
 import (
+	"fmt"
 	"os"
+	"strings"
+	"time"
+	"unicode"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/v2/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,10 +30,13 @@ type formData struct {
 }
 
 type rootModel struct {
-	log *log.Logger
+	user string
+	log  *log.Logger
 
 	wWidth  int
 	wHeight int
+	cWidth  int
+	cHeight int
 	keyMap  keys.KeyMap
 
 	pages  map[pages.PageID]tea.Model
@@ -38,28 +46,51 @@ type rootModel struct {
 
 	isAuthenticated bool
 
+	loadingSpinner spinner.Model
+	loading        bool
+
 	data formData
 }
 
-func New() tea.Model {
-	keyMap := keys.DefaultKeyMap()
+// INFO: testing stuff for "fake" api call so we can
+// test spinner - will be replaced when api complete
+type testCompleteMsg struct {
+	err error
+}
 
-	// Load each page
-	pageMap := map[pages.PageID]tea.Model{
-		pages.PageAuth:     auth.New(),
-		pages.PageAuthCode: authcode.New(),
-		pages.PageForm:     form.New(),
+// Simulate API call
+// API calls will need to be done in tea.Cmds like so
+func testAPICall() tea.Cmd {
+	return func() tea.Msg {
+		// Simulate API call delay
+		time.Sleep(3 * time.Second)
+		return testCompleteMsg{err: nil}
 	}
+}
+
+func New(user string) tea.Model {
+	keyMap := keys.DefaultKeyMap()
 
 	// Create logger
 	logger := log.New(os.Stderr)
 	logger.SetReportTimestamp(true)
-	logger.SetPrefix("app")
-	
+	prefix := fmt.Sprintf("app (%s)", user)
+	logger.SetPrefix(prefix)
+
 	logDebug := viper.GetBool("tui.debug")
 	if logDebug {
 		logger.SetLevel(log.DebugLevel)
 	}
+
+	// Load each page
+	pageMap := map[pages.PageID]tea.Model{
+		pages.PageAuth:     auth.New(logger),
+		pages.PageAuthCode: authcode.New(logger),
+		pages.PageForm:     form.New(),
+	}
+
+	loadingSpinner := spinner.New()
+	loadingSpinner.Spinner = spinner.Ellipsis
 
 	model := &rootModel{
 		log:             logger,
@@ -67,6 +98,8 @@ func New() tea.Model {
 		pages:           pageMap,
 		isAuthenticated: false,
 		loaded:          make(map[pages.PageID]bool),
+		loading:         false,
+		loadingSpinner:  loadingSpinner,
 		current:         pages.PageAuth,
 	}
 
@@ -80,6 +113,7 @@ func (m *rootModel) Init() tea.Cmd {
 
 	return tea.Batch(
 		m.pages[m.current].Init(),
+		m.loadingSpinner.Tick,
 	)
 }
 
@@ -94,24 +128,32 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		return m, m.handleWindowSizeMsg(msg)
 	case messages.PageChangeMsg:
-		m.log.Debug("page change", "msg", msg)
+		m.log.Debug("PageChangeMsg", "msg", msg)
 		return m, m.movePage(msg.ID)
 	case messages.AuthMsg:
-		m.log.Debug("auth", "msg", msg)
+		m.log.Debug("AuthMsg", "msg", msg)
 		m.data.zID = msg.ZID
-		// TODO: send req to api with zid
-		return m, cmd
+		m.loading = true
+
+		return m, testAPICall()
 	case messages.CheckOTPMsg:
-		m.log.Debug("check otp", "msg", msg)
+		m.log.Debug("CheckOTPMsg", "msg", msg)
 		// TODO: send req to api with otp, set authenticated to true on this condition
 		// log when successfully/unsuccessfully authenticated
 		m.isAuthenticated = true
 		// log when someone successfully authenticates
 		return m, tea.Batch(messages.SendIsAuthenticated(nil))
+	case testCompleteMsg:
+		m.log.Debug("testCompleteMsg", "msg", msg)
+		m.loading = false
+		return m, messages.SendPageChange(pages.PageAuthCode)
 	case messages.Submission:
-		m.log.Debug("submission", "msg", msg)
+		m.log.Debug("SubmissionMsg", "msg", msg)
 		m.data.submission = msg
 		return m, tea.Quit
+	case spinner.TickMsg:
+		m.loadingSpinner, cmd = m.loadingSpinner.Update(msg)
+		return m, cmd
 	}
 
 	// Pass any remaining messages to the current model
@@ -124,13 +166,28 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // Displays the header, current model's content and a footer if the user is authenticated
 func (m *rootModel) View() string {
-	// Create footer with the user's zID if authenticated
+	// footer only when authed
 	var footer string
 	if m.isAuthenticated {
 		footer = components.ShowFooter(m.data.zID, m.wWidth)
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Top, components.ShowHeader(m.wWidth), m.pages[m.current].View(), footer)
+	var content string
+	var loadingSpinner string
+
+	if m.loading {
+		w, h := m.findContentSize()
+
+		style := lipgloss.NewStyle().Align(lipgloss.Center).Width(w).Height(h)
+		loadingSpinner = style.Render("requesting otp")
+		content = strings.TrimRightFunc(loadingSpinner, unicode.IsSpace) + m.loadingSpinner.View()
+		content = lipgloss.NewStyle().AlignVertical(lipgloss.Center).Height(h).Render(content)
+
+	} else {
+		content = m.pages[m.current].View()
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Top, components.ShowHeader(m.wWidth), content, footer)
 }
 
 // Handles any global keybinds as defined in `m.keyMap`, then passes down
@@ -149,13 +206,31 @@ func (m *rootModel) handleKeyMsg(msg tea.KeyMsg) tea.Cmd {
 // Sets the window size in the rootModel, then passes down to the current
 // 'page' (model)
 func (m *rootModel) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
+	m.log.Debug("WindowSizeMsg", "msg", msg)
+	var cmd tea.Cmd
+
 	m.wWidth = msg.Width
 	m.wHeight = msg.Height
 
-	// Pass the WindowSizeMsg to the current model
-	updated, cmd := m.pages[m.current].Update(msg)
-	m.pages[m.current] = updated
+	w, h := m.findContentSize()
+
+	cmd = messages.SendPageContentSize(w, h)
+	m.log.Debug("SendPageContentSize", "height", h, "width", w)
+
 	return cmd
+}
+
+func (m *rootModel) findContentSize() (w int, h int) {
+	footerHeight := 0
+	if m.isAuthenticated {
+		footerHeight = lipgloss.Height(components.ShowFooter(m.data.zID, m.wWidth))
+	}
+	headerHeight := lipgloss.Height(components.ShowHeader(m.wWidth))
+
+	h = m.wHeight - footerHeight - headerHeight - 1
+	w = m.wWidth - 4
+
+	return
 }
 
 // Switches current page given a pageID
@@ -170,5 +245,11 @@ func (m *rootModel) movePage(pageID pages.PageID) tea.Cmd {
 		m.loaded[m.current] = true
 	}
 
-	return tea.Batch(cmds...)
+	w, h := m.findContentSize()
+	cmd := messages.SendPageContentSize(w, h)
+	log.Debug("SendPageContentSize", "height", m.cHeight, "width", m.cWidth)
+
+	cmds = append(cmds, cmd)
+
+	return tea.Sequence(cmds...)
 }

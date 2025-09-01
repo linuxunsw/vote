@@ -18,6 +18,10 @@ type IsAuthenticatedMsg struct {
 	Error error
 }
 
+type ZIDSubmittedMsg struct {
+	Error error
+}
+
 // Sends a message containing the user's zID for authentication
 func SendAuth(zID string) tea.Cmd {
 	msg := AuthMsg{
@@ -40,6 +44,14 @@ func SendCheckOTP(otp string) tea.Cmd {
 // if there was an error in authentication
 func SendIsAuthenticated(err error) tea.Cmd {
 	msg := IsAuthenticatedMsg{
+		Error: err,
+	}
+
+	return func() tea.Msg { return msg }
+}
+
+func SendZIDSumbitted(err error) tea.Cmd {
+	msg := ZIDSubmittedMsg{
 		Error: err,
 	}
 
