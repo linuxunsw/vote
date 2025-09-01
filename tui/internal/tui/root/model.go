@@ -258,7 +258,7 @@ func (m *rootModel) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
 
 	// Recalculate the content size and send it to the currently shown model
 	w, h := m.findContentSize()
-	m.cWidth, m.cWidth = w, h
+	m.cWidth, m.cHeight = w, h
 	cmd = messages.SendPageContentSize(w, h)
 	m.log.Debug("SendPageContentSize", "height", h, "width", w)
 
