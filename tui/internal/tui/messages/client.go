@@ -15,12 +15,11 @@ type VerifyOTPMsg struct {
 	OTP string
 }
 
-// TODO: incl session token?
 type VerifyOTPResultMsg struct {
 	Error error
 }
 
-// Sends data to root model to trigger submit
+// Submission is sent as a message to the root model
 type Submission struct {
 	Name    string
 	Email   string
@@ -31,13 +30,12 @@ type Submission struct {
 	Url       string
 }
 
-// Tells the UI result of submission - if an error is
-// present the submission was unsuccessful
 type SubmitFormResultMsg struct {
 	RefCode string
 	Error   error
 }
 
+// Sends a request to the root model to generate an OTP
 func SendRequestOTP(zid string) tea.Cmd {
 	msg := RequestOTPMsg{
 		ZID: zid,
@@ -46,6 +44,7 @@ func SendRequestOTP(zid string) tea.Cmd {
 	return func() tea.Msg { return msg }
 }
 
+// Sends request to the root model to verify the given OTP
 func SendVerifyOTP(otp string) tea.Cmd {
 	msg := VerifyOTPMsg{
 		OTP: otp,
@@ -54,6 +53,7 @@ func SendVerifyOTP(otp string) tea.Cmd {
 	return func() tea.Msg { return msg }
 }
 
+// Sends request to the root model to submit the form
 func SendSubmission(data Submission) tea.Cmd {
 	return func() tea.Msg { return data }
 }

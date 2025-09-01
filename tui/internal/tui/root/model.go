@@ -23,6 +23,8 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/form"
 )
 
+const helpHeight = 1
+
 // Form data
 type formData struct {
 	zID        string
@@ -60,18 +62,21 @@ func New(user string) tea.Model {
 	prefix := fmt.Sprintf("app (%s)", user)
 	logger.SetPrefix(prefix)
 
+	// Only debug logs if debug set in config
 	logDebug := viper.GetBool("tui.debug")
 	if logDebug {
 		logger.SetLevel(log.DebugLevel)
 	}
 
 	// Load each page
+	// TODO: add submission result page
 	pageMap := map[pages.PageID]tea.Model{
 		pages.PageAuth:     auth.New(logger),
 		pages.PageAuthCode: authcode.New(logger),
 		pages.PageForm:     form.New(),
 	}
 
+	// Create spinner
 	loadingSpinner := spinner.New()
 	loadingSpinner.Spinner = spinner.Ellipsis
 
@@ -105,6 +110,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
+	// Handle messages
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m, m.handleKeyMsg(msg)
@@ -191,9 +197,15 @@ func (m *rootModel) View() string {
 	var content string
 	var loadingSpinner string
 
+	// Content changes depending on whether we are loading
 	if m.loading {
+		// Find the current content size to allow us to center the
+		// loading spinner
 		w, h := m.findContentSize()
 
+		// Align spinner horizontally, remove spaces to the right
+		// to prevent text from re-centering as the spinner increases
+		// in width
 		style := lipgloss.NewStyle().
 			Align(lipgloss.Center).
 			Width(w).
@@ -202,13 +214,23 @@ func (m *rootModel) View() string {
 		loadingSpinner = style.Render(components.GetPageMsg(m.current))
 		content = strings.TrimRightFunc(loadingSpinner, unicode.IsSpace) + m.loadingSpinner.View()
 
-		content = lipgloss.NewStyle().AlignVertical(lipgloss.Center).Height(h).Render(content)
+		// Align vertically
+		content = lipgloss.NewStyle().
+			AlignVertical(lipgloss.Center).
+			Height(h).
+			Render(content)
 
 	} else {
 		content = m.pages[m.current].View()
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Top, components.ShowHeader(m.wWidth), content, footer)
+	// Combine all components
+	return lipgloss.JoinVertical(
+		lipgloss.Top,
+		components.ShowHeader(m.wWidth),
+		content,
+		footer,
+	)
 }
 
 // Handles any global keybinds as defined in `m.keyMap`, then passes down
@@ -230,11 +252,13 @@ func (m *rootModel) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
 	m.log.Debug("WindowSizeMsg", "msg", msg)
 	var cmd tea.Cmd
 
+	// Change root model size
 	m.wWidth = msg.Width
 	m.wHeight = msg.Height
 
+	// Recalculate the content size and send it to the currently shown model
 	w, h := m.findContentSize()
-
+	m.cWidth, m.cWidth = w, h
 	cmd = messages.SendPageContentSize(w, h)
 	m.log.Debug("SendPageContentSize", "height", h, "width", w)
 
@@ -242,14 +266,19 @@ func (m *rootModel) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
 }
 
 func (m *rootModel) findContentSize() (w int, h int) {
+	// If the user is authenticated, the footer is shown, so we should include it
+	// in the height calculation only when the user is authenticated
 	footerHeight := 0
 	if m.isAuthenticated {
 		footerHeight = lipgloss.Height(components.ShowFooter(m.data.zID, m.wWidth))
 	}
+
 	headerHeight := lipgloss.Height(components.ShowHeader(m.wWidth))
 
-	h = m.wHeight - footerHeight - headerHeight - 1
-	w = m.wWidth - 4
+	// huh adds space onto the form for the "help" view, which we
+	// should also include in size calculation
+	h = m.wHeight - footerHeight - headerHeight - helpHeight
+	w = m.wWidth
 
 	return
 }
@@ -266,9 +295,10 @@ func (m *rootModel) movePage(pageID pages.PageID) tea.Cmd {
 		m.loaded[m.current] = true
 	}
 
+	// Ensure that the content will be the correct width - may have
+	// changed due to footer size changing, etc.
 	w, h := m.findContentSize()
 	cmd := messages.SendPageContentSize(w, h)
-	log.Debug("SendPageContentSize", "height", m.cHeight, "width", m.cWidth)
 
 	cmds = append(cmds, cmd)
 

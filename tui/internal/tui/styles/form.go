@@ -7,8 +7,8 @@ import (
 
 var FormStyle = lipgloss.NewStyle().
 	Align(lipgloss.Left).
-	MarginRight(2).
-	MarginLeft(2)
+	PaddingRight(2).
+	PaddingLeft(2)
 
 func FormTheme() *huh.Theme {
 	t := huh.ThemeBase()
