@@ -13,6 +13,8 @@ type formModel struct {
 	wHeight int
 
 	form *huh.Form
+
+	isSubmitted bool
 }
 
 // Creates model
@@ -20,7 +22,8 @@ type formModel struct {
 // server state (e.g. nomination vs voting)
 func New() tea.Model {
 	model := &formModel{
-		form: forms.Nomination(),
+		form:        forms.Nomination(),
+		isSubmitted: false,
 	}
 
 	return model
@@ -39,7 +42,9 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Quit app when form completed
 	// TODO: change to submission page
-	if m.form.State == huh.StateCompleted {
+	if m.form.State == huh.StateCompleted && !m.isSubmitted {
+		m.isSubmitted = true
+
 		// TODO: get roles from form
 		data := messages.Submission{
 			Name:      m.form.GetString("name"),

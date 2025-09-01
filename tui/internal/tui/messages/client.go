@@ -46,14 +46,6 @@ func SendRequestOTP(zid string) tea.Cmd {
 	return func() tea.Msg { return msg }
 }
 
-func SendRequestOTPResult(err error) tea.Cmd {
-	msg := RequestOTPResultMsg{
-		Error: err,
-	}
-
-	return func() tea.Msg { return msg }
-}
-
 func SendVerifyOTP(otp string) tea.Cmd {
 	msg := VerifyOTPMsg{
 		OTP: otp,
@@ -62,23 +54,6 @@ func SendVerifyOTP(otp string) tea.Cmd {
 	return func() tea.Msg { return msg }
 }
 
-func SendVerifyOTPResult(err error) tea.Cmd {
-	msg := VerifyOTPResultMsg{
-		Error: err,
-	}
-
-	return func() tea.Msg { return msg }
-}
-
 func SendSubmission(data Submission) tea.Cmd {
 	return func() tea.Msg { return data }
-}
-
-func SendSubmitFormResult(refCode string, result error) tea.Cmd {
-	msg := SubmitFormResultMsg{
-		RefCode: refCode,
-		Error:   result,
-	}
-
-	return func() tea.Msg { return msg }
 }

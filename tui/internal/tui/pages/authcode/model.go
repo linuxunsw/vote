@@ -17,12 +17,15 @@ type authCodeModel struct {
 	wHeight int
 
 	form *huh.Form
+
+	isSubmitted bool
 }
 
 func New(logger *log.Logger) tea.Model {
 	model := &authCodeModel{
-		logger: logger,
-		form:   forms.OTP(),
+		logger:      logger,
+		form:        forms.OTP(),
+		isSubmitted: false,
 	}
 
 	return model
@@ -52,7 +55,8 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.form = f
 	}
 
-	if m.form.State == huh.StateCompleted {
+	if m.form.State == huh.StateCompleted && !m.isSubmitted {
+		m.isSubmitted = true
 		otp := m.form.GetString("otp")
 		return m, messages.SendVerifyOTP(otp)
 	}

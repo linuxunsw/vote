@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/spf13/viper"
 
+	"github.com/linuxunsw/vote/tui/internal/client"
 	"github.com/linuxunsw/vote/tui/internal/tui/components"
 	"github.com/linuxunsw/vote/tui/internal/tui/keys"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
@@ -130,8 +131,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.loading = true
 
-		// TODO: Call API here in a tea.Cmd
-		return m, testAPICall()
+		return m, client.RequestOTP(m.data.zID)
 	case messages.RequestOTPResultMsg:
 		m.log.Debug("RequestOTPResultMsg", "error", msg.Error)
 		// only change page if we didn't error
@@ -145,14 +145,15 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.loading = true
 
-		// TODO: Call API here in a tea.Cmd
-		return m, messages.SendVerifyOTPResult(nil)
+		return m, client.VerifyOTP(msg.OTP)
 	case messages.VerifyOTPResultMsg:
 		m.log.Debug("VerifyOTPResultMsg", "error", msg.Error)
 
 		m.loading = false
 
 		if msg.Error == nil {
+			m.isAuthenticated = true
+			m.log.Info("User authenticated", "zID", m.data.zID)
 			return m, messages.SendPageChange(pages.PageForm)
 		}
 	case messages.Submission:
@@ -165,15 +166,16 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.loading = true
 
-		// TODO: Call API here in a tea.Cmd
-		return m, messages.SendSubmitFormResult("refCode", nil)
+		return m, client.SubmitForm(msg)
 	case messages.SubmitFormResultMsg:
 		m.log.Debug("SubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
 
 		m.loading = false
 
 		if msg.Error == nil {
-			// TODO: Replace with page change
+			m.log.Info("Form submitted", "zID", m.data.zID)
+
+			// TODO: replace with page change to submission result page
 			return m, tea.Quit
 		}
 	case spinner.TickMsg:
@@ -191,7 +193,6 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // Displays the header, current model's content and a footer if the	user is authenticated
 func (m *rootModel) View() string {
-	// footer only when authed
 	var footer string
 	if m.isAuthenticated {
 		footer = components.ShowFooter(m.data.zID, m.wWidth)
