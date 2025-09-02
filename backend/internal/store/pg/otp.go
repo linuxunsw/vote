@@ -21,6 +21,11 @@ type pgOTPStore struct {
 	maxRetry int
 	expiry   time.Duration
 
+	ratelimitCount  int
+	rateLimitWithin time.Duration
+
+	// cannot create more than `rateLimitCount` OTPs within `rateLimitWithin` duration
+
 	nowProvider func() time.Time
 }
 
@@ -30,6 +35,9 @@ func NewPgOTPStore(pool PgxPoolIface, cfg config.OTPConfig) store.OTPStore {
 		secret:   cfg.Secret,
 		maxRetry: cfg.MaxRetry,
 		expiry:   cfg.Duration,
+
+		ratelimitCount:  cfg.RatelimitCount,
+		rateLimitWithin: cfg.RatelimitWithin,
 
 		nowProvider: time.Now,
 	}
@@ -46,11 +54,69 @@ func (st *pgOTPStore) hashCompare(code string, expectedCodeHash string) bool {
 	return hmac.Equal([]byte(expectedCodeHash), []byte(given))
 }
 
+type otpRatelimit struct {
+	Zid         string    `db:"zid"`
+	Count       int       `db:"count"`
+	WindowStart time.Time `db:"window_start"`
+}
+
 func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code string) error {
+	tx, err := st.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
 	codeHash := st.hashCode(code)
 	now := st.nowProvider()
 
-	_, err := st.pool.Exec(ctx, `
+	ratelimitRows, err := st.pool.Query(ctx, `
+		select * from otp_ratelimit where zid = $1
+	`, zid)
+	if err != nil {
+		return err
+	}
+
+	ratelimitEntry, err := pgx.CollectOneRow(ratelimitRows, pgx.RowToStructByName[otpRatelimit])
+	if errors.Is(err, pgx.ErrNoRows) {
+		// no rate limit, reset the window
+		_, err = st.pool.Exec(ctx, `
+			insert into otp_ratelimit (zid, count, window_start)
+			values ($1, 0, $2)
+		`, zid, now)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else {
+		// rate limiting applies
+		if ratelimitEntry.WindowStart.Add(st.rateLimitWithin).After(now) {
+			if ratelimitEntry.Count >= st.ratelimitCount {
+				return store.OTPRateLimitExceeded
+			}
+
+			ratelimitEntry.Count++
+			_, err := st.pool.Exec(ctx, `
+				update otp_ratelimit set count = $2 where zid = $1
+			`, zid, ratelimitEntry.Count)
+			if err != nil {
+				return err
+			}
+		} else {
+			// reset the ratelimit window
+			_, err = st.pool.Exec(ctx, `
+				update otp_ratelimit
+				set count = 0, window_start = $2
+				where zid = $1
+			`, zid, now)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	_, err = st.pool.Exec(ctx, `
 		insert into otp (zid, code_hash, retry_amount, created_at)
 		values ($1, $2, 0, $3)
 		on conflict (zid) do update set
@@ -58,8 +124,15 @@ func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code stri
 			retry_amount = EXCLUDED.retry_amount,
 			created_at = EXCLUDED.created_at;
 	`, zid, codeHash, now)
+	if err != nil {
+		return err
+	}
 
-	return err
+	// commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (st *pgOTPStore) Active(ctx context.Context, zid string) (*store.OTPEntry, error) {
@@ -129,9 +202,7 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 
 	if ok {
 		// consume
-		_, err = tx.Exec(ctx, `
-			delete from otp where zid = $1
-		`, zid)
+		err = st.ConsumeIfExists(ctx, zid)
 	} else {
 		// increment retries
 		_, err = tx.Exec(ctx, `
@@ -155,8 +226,28 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 }
 
 func (st *pgOTPStore) ConsumeIfExists(ctx context.Context, zid string) error {
-	_, err := st.pool.Exec(ctx, `
-		delete from otp where zid = $1
+	tx, err := st.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = st.pool.Exec(ctx, `
+		delete from otp where zid = $1;
 	`, zid)
-	return err
+	if err != nil {
+		return err
+	}
+	_, err = st.pool.Exec(ctx, `
+		delete from otp_ratelimit where zid = $1;
+	`, zid)
+	if err != nil {
+		return err
+	}
+
+	// commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
