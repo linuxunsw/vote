@@ -12,7 +12,7 @@ import (
 )
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, otpStore store.OTPStore, nominationStore any, mailer mailer.Mailer, checker health.Checker) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
@@ -45,19 +45,27 @@ func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, check
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "nomination-status",
 		Method:      "GET",
-		Path:        "/election/{id}/nomination",
-		Summary:     "Check nomination status",
+		Path:        "/elections/{id}/nominations",
+		Summary:     "Check self-nomination status",
 		Tags:        []string{"Nominations"},
-	}, handlers.CheckNominationStatus(store))
+	}, handlers.CheckNominationStatus(nominationStore))
 
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "submit-nomination",
-	// 	Method:      "POST",
-	// 	Path:        "/nominations",
-	// 	Summary:     "Submit a self-nomination",
-	// 	Tags:        []string{"Nominations"},
-	// }, handlers.SubmitNomination(store))
-	//
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "nomination-submit",
+		Method:      "POST",
+		Path:        "/elections/{id}/nominations",
+		Summary:     "Submit self-nomination",
+		Tags:        []string{"Nominations"},
+	}, handlers.SubmitNomination(nominationStore))
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "nomination-delete",
+		Method:      "DELETE",
+		Path:        "/elections/{id}/nominations",
+		Summary:     "Delete self-nomination",
+		Tags:        []string{"Nominations"},
+	}, handlers.DeleteNomination(nominationStore))
+
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
 	// 	Method:      "GET",

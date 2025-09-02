@@ -11,3 +11,15 @@ func CheckNominationStatus(store any) func(ctx context.Context, input *models.No
 		panic("hi")
 	}
 }
+
+func SubmitNomination(store any) func(ctx context.Context, input *models.NominationSubmissionInput) (*models.NominationSubmissionResponse, error) {
+	return func(ctx context.Context, input *models.NominationSubmissionInput) (*models.NominationSubmissionResponse, error) {
+		panic("hi")
+	}
+}
+
+func DeleteNomination(store any) func(ctx context.Context, input *models.NominationDeleteInput) (*models.NominationDeleteResponse, error) {
+	return func(ctx context.Context, input *models.NominationDeleteInput) (*models.NominationDeleteResponse, error) {
+		panic("hi")
+	}
+}

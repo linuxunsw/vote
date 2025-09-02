@@ -18,6 +18,7 @@ type NominationStatusResponse struct {
 
 type NominationSubmissionInput struct {
 	Session http.Cookie `cookie:"session"`
+	ID      string      `path:"id"`
 	Body    Nomination  `json:"nomination"`
 }
 
@@ -28,4 +29,15 @@ type Nomination struct {
 	Roles        []string `json:"roles" doc:"The roles the user is nominating for" enum:"president,secretary,treasurer,arc_delegate,edi_officer,grievance_officer" example:"arc_delegate,edi_officer"`
 	Discord      string   `json:"discord" doc:"The user's Discord username" example:"johntux"`
 	URL          string   `json:"url" doc:"An optional URL provided by the user" required:"false" format:"email" example:"linuxunsw.org"`
+}
+
+type NominationSubmissionResponse struct {
+}
+
+type NominationDeleteInput struct {
+	Session http.Cookie `cookie:"session"`
+	ID      string      `path:"id"`
+}
+
+type NominationDeleteResponse struct {
 }

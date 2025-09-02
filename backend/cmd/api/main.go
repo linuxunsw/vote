@@ -92,7 +92,7 @@ func main() {
 
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
 
-	v1.Register(api, otpStore, nil, health)
+	v1.Register(api, otpStore, nil, nil, health)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
