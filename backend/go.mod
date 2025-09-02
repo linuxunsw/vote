@@ -9,6 +9,7 @@ require (
 	github.com/golang-cz/devslog v0.0.15
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/lestrrat-go/jwx/v3 v3.0.10
+	github.com/pashagolub/pgxmock/v4 v4.8.0
 	github.com/pressly/goose/v3 v3.25.0
 	github.com/spf13/cobra v1.9.1
 )
