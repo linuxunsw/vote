@@ -12,33 +12,34 @@ import (
 )
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, store store.Store, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, checker health.Checker) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
 	huma.Get(api, "/health", handlers.GetHealth(checker))
+	cfg := config.Load()
 
 	// == Authentication Routes ==
-	// huma.Register(v1, huma.Operation{
-	// 	OperationID: "auth-request-otp",
-	// 	Method:      "POST",
-	// 	Path:        "/auth/request-otp",
-	// 	Summary:     "Request an OTP",
-	// 	Tags:        []string{"Auth"},
-	// }, handlers.RequestOTP(store, mailer))
-	//
-	// huma.Register(v1, huma.Operation{
-	// 	OperationID: "auth-verify-otp",
-	// 	Method:      "POST",
-	// 	Path:        "/auth/verify-otp",
-	// 	Summary:     "Verify an OTP to get a JWT",
-	// 	Tags:        []string{"Auth"},
-	// }, handlers.VerifyOTP(store, jwtSecret))
+	huma.Register(v1, huma.Operation{
+		OperationID: "generate-otp",
+		Method:      "POST",
+		Path:        "/otp/generate",
+		Summary:     "Generate an OTP code",
+		Tags:        []string{"OTP"},
+	}, handlers.GenerateOTP(otpStore, mailer))
+
+	huma.Register(v1, huma.Operation{
+		OperationID: "submit-otp",
+		Method:      "POST",
+		Path:        "/otp/submit",
+		Summary:     "Submit an OTP to enter a session",
+		Tags:        []string{"OTP"},
+	}, handlers.SubmitOTP(otpStore, cfg.JWT))
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
 
-	authMiddleware := middleware.Authenticator(api, config.Load().JWT)
+	authMiddleware := middleware.Authenticator(api, cfg.JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
 	// huma.Register(userRoutes, huma.Operation{
