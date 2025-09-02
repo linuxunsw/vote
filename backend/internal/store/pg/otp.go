@@ -12,12 +12,11 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/store"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/pashagolub/pgxmock/v4"
 )
 
 type pgOTPStore struct {
 	// *pgx.Pool
-	pool     pgxmock.PgxPoolIface
+	pool     PgxPoolIface
 	secret   string
 	maxRetry int
 	expiry   time.Duration
@@ -25,7 +24,7 @@ type pgOTPStore struct {
 	nowProvider func() time.Time
 }
 
-func NewPgOTPStore(pool pgxmock.PgxPoolIface, cfg config.OTPConfig) store.OTPStore {
+func NewPgOTPStore(pool PgxPoolIface, cfg config.OTPConfig) store.OTPStore {
 	return &pgOTPStore{
 		pool:     pool,
 		secret:   cfg.Secret,
