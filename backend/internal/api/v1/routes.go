@@ -42,6 +42,14 @@ func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, check
 	authMiddleware := middleware.Authenticator(api, cfg.JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "nomination-status",
+		Method:      "GET",
+		Path:        "/election/{id}/nomination",
+		Summary:     "Check nomination status",
+		Tags:        []string{"Nominations"},
+	}, handlers.CheckNominationStatus(store))
+
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "submit-nomination",
 	// 	Method:      "POST",
