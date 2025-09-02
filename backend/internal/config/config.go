@@ -9,6 +9,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	OTP      OTPConfig
 	Mailer   MailerConfig
 	Logger   LoggerConfig
 }
@@ -33,6 +34,12 @@ type JWTConfig struct {
 	Secret   string
 	Duration time.Duration
 	Issuer   string
+}
+
+type OTPConfig struct {
+	Secret   string
+	MaxRetry int
+	Duration time.Duration
 }
 
 type MailerConfig struct {
@@ -72,6 +79,11 @@ func Load() Config {
 			Secret:   GetString("JWT_SECRET", "DONTUSEMEINPRODPLEASE"),
 			Duration: time.Minute * 30,
 			Issuer:   "vote-api",
+		},
+		OTP: OTPConfig{
+			Secret:   GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
+			MaxRetry: 10,
+			Duration: time.Minute * 10,
 		},
 		Mailer: MailerConfig{
 			ResendAPIKey: GetString("RESEND_API_KEY", ""),

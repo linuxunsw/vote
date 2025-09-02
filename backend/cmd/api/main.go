@@ -159,7 +159,7 @@ func createMigrateCommand(log *slog.Logger, cfg config.Config) *cobra.Command {
 			// NOTE: maybe use embeded migrations? see docs
 			// FIXME: use correct directory
 			fmt.Println("Running migrations...")
-			if err := goose.Up(db, "db/migrations"); err != nil {
+			if err := goose.Up(db, "store/migrations"); err != nil {
 				log.Error("Migration failed", "error", err)
 				os.Exit(1)
 			}
