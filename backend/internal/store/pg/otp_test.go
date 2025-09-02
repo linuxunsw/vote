@@ -17,7 +17,7 @@ func shimNow(st *pgOTPStore, testNow time.Time) {
 	st.nowProvider = nowProvider
 }
 
-func TestCreateOrReplace(t *testing.T) {
+func TestCreateOrReplaceEmptyRatelimit(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
@@ -31,9 +31,19 @@ func TestCreateOrReplace(t *testing.T) {
 	zid := "z0000000"
 	code := "123123"
 
+	mock.ExpectBegin()
+	mock.ExpectQuery(`select.*from otp_ratelimit`).
+		WithArgs(zid).
+		WillReturnRows(pgxmock.NewRows(otpRatelimitRows))
+
+	mock.ExpectExec(`insert into otp_ratelimit`).
+		WithArgs(zid, testNow).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
 	mock.ExpectExec(`insert into otp.*on conflict \(zid\) do update set`).
 		WithArgs(zid, st.hashCode(code), testNow).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 
 	shimNow(st, testNow)
 	if err := st.CreateOrReplace(ctx, zid, code); err != nil {
@@ -45,8 +55,98 @@ func TestCreateOrReplace(t *testing.T) {
 	}
 }
 
+func TestCreateOrReplaceSuccessRatelimit(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	ctx := t.Context()
+	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+
+	testNow := time.Now()
+	zid := "z0000000"
+	code := "123123"
+	if st.ratelimitCount < 1 {
+		t.Fatalf("ratelimit count is less than 1")
+	}
+	ratelimitCount := st.ratelimitCount - 1
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`select.*from otp_ratelimit`).
+		WithArgs(zid).
+		WillReturnRows(pgxmock.NewRows(otpRatelimitRows).
+			AddRow(zid, ratelimitCount, testNow))
+
+	mock.ExpectExec(`update otp_ratelimit set count = \$2`).
+		WithArgs(zid, ratelimitCount + 1).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	mock.ExpectExec(`insert into otp.*on conflict \(zid\) do update set`).
+		WithArgs(zid, st.hashCode(code), testNow).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
+
+	shimNow(st, testNow)
+	if err := st.CreateOrReplace(ctx, zid, code); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestCreateOrReplaceSuccessAfterRatelimit(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	ctx := t.Context()
+	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+
+	testNow := time.Now()
+	testAfterRatelimit := testNow.Add(st.rateLimitWithin).Add(1 * time.Second)
+
+	zid := "z0000000"
+	code := "123123"
+	if st.ratelimitCount < 1 {
+		t.Fatalf("ratelimit count is less than 1")
+	}
+	ratelimitCount := st.ratelimitCount // will fail if not after
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`select.*from otp_ratelimit`).
+		WithArgs(zid).
+		WillReturnRows(pgxmock.NewRows(otpRatelimitRows).
+			AddRow(zid, ratelimitCount, testNow))
+
+	// set new window_start
+	mock.ExpectExec(`update otp_ratelimit set count = 0`).
+		WithArgs(zid, testAfterRatelimit).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	mock.ExpectExec(`insert into otp.*on conflict \(zid\) do update set`).
+		WithArgs(zid, st.hashCode(code), testAfterRatelimit).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
+
+	shimNow(st, testAfterRatelimit)
+	if err := st.CreateOrReplace(ctx, zid, code); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
 var (
-	otpRows = []string{"zid", "code_hash", "retry_amount", "created_at"}
+	otpRows          = []string{"zid", "code_hash", "retry_amount", "created_at"}
+	otpRatelimitRows = []string{"zid", "count", "window_start"}
 )
 
 func TestActiveExists(t *testing.T) {

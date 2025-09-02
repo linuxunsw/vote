@@ -46,6 +46,9 @@ type OTPConfig struct {
 	Secret   string
 	MaxRetry int
 	Duration time.Duration
+
+	RatelimitCount int
+	RatelimitWithin time.Duration
 }
 
 type MailerConfig struct {
@@ -102,6 +105,8 @@ func Load() Config {
 			Secret:   GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
 			MaxRetry: 10,
 			Duration: time.Minute * 10,
+			RatelimitCount: 3,
+			RatelimitWithin: time.Minute * 5,
 		},
 		Mailer: MailerConfig{
 			ResendAPIKey: GetString("RESEND_API_KEY", ""),
