@@ -392,9 +392,15 @@ func TestValidateAndConsumeSuccess(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows(otpRows).
 			AddRow(zid, st.hashCode(code), 0, testNowBegin))
 
+	mock.ExpectBegin()
 	mock.ExpectExec(`delete from otp where zid`).
 		WithArgs(zid). // deleted
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectExec(`delete from otp_ratelimit where zid`).
+		WithArgs(zid). // deleted
+		WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectCommit()
+
 	mock.ExpectCommit()
 
 	shimNow(st, testNowBegin)
@@ -426,9 +432,14 @@ func TestConsumeIfExists(t *testing.T) {
 
 	zid := "z0000000"
 
+	mock.ExpectBegin()
 	mock.ExpectExec(`delete from otp where zid`).
 		WithArgs(zid). // deleted
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectExec(`delete from otp_ratelimit where zid`).
+		WithArgs(zid). // deleted
+		WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectCommit()
 
 	if err := st.ConsumeIfExists(ctx, zid); err != nil {
 		t.Fatal(err)
