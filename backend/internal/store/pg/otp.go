@@ -17,20 +17,20 @@ import (
 
 type pgOTPStore struct {
 	// *pgx.Pool
-	pool pgxmock.PgxPoolIface
+	pool     pgxmock.PgxPoolIface
 	secret   string
 	maxRetry int
-	expiry time.Duration
+	expiry   time.Duration
 
-	nowProvider func () time.Time
+	nowProvider func() time.Time
 }
 
 func NewPgOTPStore(pool pgxmock.PgxPoolIface, cfg config.OTPConfig) store.OTPStore {
 	return &pgOTPStore{
-		pool: pool,
-		secret: cfg.Secret,
+		pool:     pool,
+		secret:   cfg.Secret,
 		maxRetry: cfg.MaxRetry,
-		expiry: cfg.Duration,
+		expiry:   cfg.Duration,
 
 		nowProvider: time.Now,
 	}
@@ -74,7 +74,9 @@ func (st *pgOTPStore) Active(ctx context.Context, zid string) (*store.OTPEntry, 
 	}
 
 	entry, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[store.OTPEntry])
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -102,13 +104,13 @@ func (st *pgOTPStore) activeForUpdate(ctx context.Context, zid string) (*store.O
 
 func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code string) (valid bool, reason store.OTPValidate, err error) {
 	tx, err := st.pool.Begin(ctx)
-	if (err != nil) {
+	if err != nil {
 		return false, store.OTPValidateInternalError, err
 	}
 	defer tx.Rollback(ctx)
 
 	otp, err := st.activeForUpdate(ctx, zid)
-	if (errors.Is(err, pgx.ErrNoRows)) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false, store.OTPValidateNotFoundOrExpired, nil
 	} else if err != nil {
 		return false, store.OTPValidateInternalError, err

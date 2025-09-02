@@ -11,7 +11,7 @@ import (
 )
 
 func shimNow(st *pgOTPStore, testNow time.Time) {
-	nowProvider := func () time.Time {
+	nowProvider := func() time.Time {
 		return testNow
 	}
 	st.nowProvider = nowProvider
@@ -48,6 +48,76 @@ func TestCreateOrReplace(t *testing.T) {
 var (
 	otpRows = []string{"zid", "code_hash", "retry_amount", "created_at"}
 )
+
+func TestActiveExists(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	ctx := t.Context()
+	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+
+	testNowBegin := time.Now()
+	zid := "z0000000"
+	code := "123123"
+
+	mock.ExpectQuery(`select \* from otp.*where zid = \$1`).
+		WithArgs(zid).
+		WillReturnRows(pgxmock.NewRows(otpRows).
+			AddRow(zid, st.hashCode(code), 0, testNowBegin))
+
+	otp, err := st.Active(ctx, zid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if otp == nil {
+		t.Fatalf("OTP should exist")
+	}
+	expected := store.OTPEntry{
+		Zid:         zid,
+		CodeHash:    st.hashCode(code),
+		RetryAmount: 0,
+		CreatedAt:   testNowBegin,
+	}
+	if *otp != expected {
+		t.Fatalf("otp != expected, got %v", *otp)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestActiveNoExist(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	ctx := t.Context()
+	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+
+	zid := "z0000000"
+
+	mock.ExpectQuery(`select \* from otp.*where zid = \$1`).
+		WithArgs(zid).
+		WillReturnRows(pgxmock.NewRows(otpRows))
+
+	otp, err := st.Active(ctx, zid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if otp != nil {
+		t.Fatalf("OTP shouldn't exist")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
 
 func TestValidateAndConsumeNoEntry(t *testing.T) {
 	mock, err := pgxmock.NewPool()
