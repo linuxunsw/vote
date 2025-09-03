@@ -24,6 +24,7 @@ type UserClaims struct {
 }
 
 // Authenticator creates a Huma middleware to validate JWTs.
+// FIXME: cookie auth instead of bearer token? THIS IS SUBJECT TO CHANGE
 func Authenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
 	return func(ctx huma.Context, next func(ctx huma.Context)) {
 		authHeader := ctx.Header("Authorization")
