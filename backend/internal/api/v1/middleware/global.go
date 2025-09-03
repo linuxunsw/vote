@@ -7,6 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/go-chi/httplog/v3"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware/requestid"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/logger"
 )
@@ -58,6 +59,7 @@ func AddGlobalMiddleware(api huma.API, opts GlobalMiddlewareOptions) error {
 	requestLogger := newRequestLogger(opts, level)
 	rateLimiter := newRateLimiter(opts.RateLimitCfg, opts.RealIPAllowlist)
 
+	api.UseMiddleware(requestid.HumaMiddleware(opts.LoggerCfg.RequestIDHeader))
 	api.UseMiddleware(humaGoMiddleware(requestLogger))
 	api.UseMiddleware(humaGoMiddleware(func(next http.Handler) http.Handler {
 		return opts.CrossOrigin.Handler(next)

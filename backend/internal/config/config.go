@@ -65,6 +65,7 @@ type LoggerConfig struct {
 		Header      string
 		HeaderValue string
 	}
+	RequestIDHeader string
 }
 
 type RateLimitConfig struct {
@@ -119,6 +120,7 @@ func Load() Config {
 				Header:      GetString("LOGGER_DEBUG_HEADER", "X-Vote-Debug"),
 				HeaderValue: GetString("LOGGER_DEBUG_HEADER_VALUE", "show-body"),
 			},
+			RequestIDHeader: GetString("LOGGER_REQUEST_ID_HEADER", "X-Request-ID"),
 		},
 	}
 

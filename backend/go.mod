@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/httplog/v3 v3.2.2
 	github.com/go-chi/httprate v0.15.0
 	github.com/golang-cz/devslog v0.0.15
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/lestrrat-go/jwx/v3 v3.0.10
 	github.com/pashagolub/pgxmock/v4 v4.8.0
