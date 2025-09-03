@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 )
 
@@ -19,8 +20,13 @@ type APIConfig struct {
 }
 
 type ServerConfig struct {
-	Port       int
-	Production bool
+	Port int
+	// used for CrossOriginProtection
+	AllowedOrigins []string
+	// comma seperated allowlist of IPs to accept "Real IP" headers from
+	// i.e authorised servers that handle mutliple people's requests
+	RealIPAllowlist []string
+	RateLimit       RateLimitConfig
 }
 
 type DatabaseConfig struct {
@@ -61,13 +67,24 @@ type LoggerConfig struct {
 	}
 }
 
+type RateLimitConfig struct {
+	RequestLimit int
+	WindowLength time.Duration
+}
+
 func Load() Config {
 	config := Config{
 		API: APIConfig{
 			Version: "1.0.0",
 		},
 		Server: ServerConfig{
-			Port: GetInt("PORT", 8888),
+			Port:            GetInt("PORT", 8888),
+			AllowedOrigins:  SplitAndTrim(GetString("ALLOWED_ORIGINS", "")),
+			RealIPAllowlist: SplitAndTrim(GetString("REAL_IP_ALLOWLIST", "")),
+			RateLimit: RateLimitConfig{
+				RequestLimit: 10,
+				WindowLength: 10 * time.Second,
+			},
 		},
 		Database: DatabaseConfig{
 			Address:            GetString("DB_ADDR", "postgres://admin:admin@localhost/vote?sslmode=disable"),
@@ -106,4 +123,23 @@ func Load() Config {
 	}
 
 	return config
+}
+
+// takes a comma separated string and returns a slice of
+// trimmed, non-empty components. If s is empty it returns nil.
+func SplitAndTrim(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }

@@ -75,7 +75,28 @@ func main() {
 	router := http.NewServeMux()
 	api := humago.New(router, huma.DefaultConfig("Vote API", cfg.API.Version))
 
-	err = middleware.AddGlobalMiddleware(api, cfg.Logger, logger, logFormat)
+	// init crossorigin
+	crossOrigin := http.NewCrossOriginProtection()
+	if cfg.Server.AllowedOrigins != nil {
+		for _, origin := range cfg.Server.AllowedOrigins {
+			if err := crossOrigin.AddTrustedOrigin(origin); err != nil {
+				logger.Error("Invalid allowed origin", "origin", origin, "error", err)
+				os.Exit(1)
+			}
+		}
+	}
+
+	// global middleware
+	opts := middleware.GlobalMiddlewareOptions{
+		Logger:          logger,
+		LogFormat:       logFormat,
+		LoggerCfg:       cfg.Logger,
+		CrossOrigin:     crossOrigin,
+		RateLimitCfg:    cfg.Server.RateLimit,
+		RealIPAllowlist: cfg.Server.RealIPAllowlist,
+	}
+	logger.Info("ALLOWLIST REAL IP", "ips", cfg.Server.RealIPAllowlist)
+	err = middleware.AddGlobalMiddleware(api, opts)
 	if err != nil {
 		logger.Error("Unable to add global middleware", "error", err)
 		os.Exit(1)
