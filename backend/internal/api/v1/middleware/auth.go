@@ -84,5 +84,3 @@ func GetUser(ctx context.Context) (*UserClaims, bool) {
 	info, ok := ctx.Value(userContextKey).(*UserClaims)
 	return info, ok
 }
-
-// TODO: Logging middleware for requests/responses

@@ -11,12 +11,17 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/logger"
 )
 
+// Provides a huma middleware that wraps a httplog RequestLogger. This means that
+// this middleware is tied to the underlying req/res from humago currently
 func humaRouterWithLogging(requestLogger func(http.Handler) http.Handler) func(ctx huma.Context, next func(ctx huma.Context)) {
 	return func(ctx huma.Context, next func(ctx huma.Context)) {
+		// NOTE: Since httplog is "router-agnostic", it should be simple enough to modify this
+		// in the case that a different router is used
 		r, w := humago.Unwrap(ctx)
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next(ctx)
+			newCtx := humago.NewContext(ctx.Operation(), r, w)
+			next(newCtx)
 		})
 
 		requestLogger(handler).ServeHTTP(w, r)

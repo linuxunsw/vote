@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-type OTPValidate int
+type (
+	OTPValidate int
+	Store       any
+)
 
 const (
 	OTPValidateSuccess OTPValidate = iota
