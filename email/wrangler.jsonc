@@ -10,6 +10,14 @@
   "observability": {
     "enabled": true,
   },
+  "send_email": [
+    {
+      "name": "EMAIL",
+    }
+  ],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
