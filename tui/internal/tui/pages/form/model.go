@@ -3,14 +3,17 @@ package form
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/log"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
 )
 
 type formModel struct {
-	wWidth  int
-	wHeight int
+	logger *log.Logger
+
+	cWidth  int
+	cHeight int
 
 	form *huh.Form
 
@@ -20,8 +23,9 @@ type formModel struct {
 // Creates model
 // TODO: determine which form to display depending on
 // server state (e.g. nomination vs voting)
-func New() tea.Model {
+func New(logger *log.Logger) tea.Model {
 	model := &formModel{
+		logger:      logger,
 		form:        forms.Nomination(),
 		isSubmitted: false,
 	}
@@ -61,10 +65,11 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case messages.PageContentSizeMsg:
-		m.wHeight = msg.Height
-		m.wWidth = msg.Width
+		log.Debug("PageContentSizeMsg", "height", msg.Height, "width", msg.Width)
+		m.cHeight = msg.Height
+		m.cWidth = msg.Width
 
-		m.form = m.form.WithHeight(m.wHeight).WithWidth(m.wWidth)
+		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
 	}
 
 	return m, cmd

@@ -13,11 +13,14 @@ import (
 type authCodeModel struct {
 	logger *log.Logger
 
-	wWidth  int
-	wHeight int
+	// Maximum size allowed for content
+	cWidth  int
+	cHeight int
 
+	// OTP form
 	form *huh.Form
 
+	// Prevent resubmission of an already submitted form
 	isSubmitted bool
 }
 
@@ -38,18 +41,17 @@ func (m *authCodeModel) Init() tea.Cmd {
 func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.PageContentSizeMsg:
-		log.Debug("PageContentSizeMsg", "msg", msg)
-		m.wHeight = msg.Height
-		m.wWidth = msg.Width
-		m.form = m.form.WithHeight(m.wHeight).WithWidth(m.wWidth)
+		log.Debug("PageContentSizeMsg", "height", msg.Height, "width", msg.Width)
+		m.cHeight = msg.Height
+		m.cWidth = msg.Width
+		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
 
 		formHeight := lipgloss.Height(m.form.View())
 		formWidth := lipgloss.Width(m.form.View())
 		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
 		return m, nil
-	case tea.WindowSizeMsg:
-		return m, nil
 	}
+
 	form, cmd := m.form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
 		m.form = f

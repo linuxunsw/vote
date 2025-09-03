@@ -35,6 +35,12 @@ type SubmitFormResultMsg struct {
 	Error   error
 }
 
+// Message sent to the submission page to show result data
+type PublicSubmitFormResultMsg struct {
+	RefCode string
+	Error   error
+}
+
 // Sends a request to the root model to generate an OTP
 func SendRequestOTP(zid string) tea.Cmd {
 	msg := RequestOTPMsg{
@@ -56,4 +62,13 @@ func SendVerifyOTP(otp string) tea.Cmd {
 // Sends request to the root model to submit the form
 func SendSubmission(data Submission) tea.Cmd {
 	return func() tea.Msg { return data }
+}
+
+func SendPublicSubmitFormResult(refCode string, error error) tea.Cmd {
+	msg := PublicSubmitFormResultMsg{
+		RefCode: refCode,
+		Error:   error,
+	}
+
+	return func() tea.Msg { return msg }
 }

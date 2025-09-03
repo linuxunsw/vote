@@ -14,8 +14,8 @@ import (
 type authModel struct {
 	logger *log.Logger
 
-	wWidth  int
-	wHeight int
+	cWidth  int
+	cHeight int
 
 	form *huh.Form
 
@@ -62,10 +62,9 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle remaining bubble tea commands
 	switch msg := msg.(type) {
 	case messages.PageContentSizeMsg:
-		m.wHeight = msg.Height
-		m.wWidth = msg.Width
-		// FIX: Change value
-		m.form = m.form.WithHeight(m.wHeight).WithWidth(m.wWidth)
+		m.cHeight = msg.Height
+		m.cWidth = msg.Width
+		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
 
 		formHeight := lipgloss.Height(m.form.View())
 		formWidth := lipgloss.Width(m.form.View())

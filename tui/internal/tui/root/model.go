@@ -21,6 +21,7 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/auth"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/authcode"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/form"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/submit"
 )
 
 const helpHeight = 1
@@ -73,7 +74,8 @@ func New(user string) tea.Model {
 	pageMap := map[pages.PageID]tea.Model{
 		pages.PageAuth:     auth.New(logger),
 		pages.PageAuthCode: authcode.New(logger),
-		pages.PageForm:     form.New(),
+		pages.PageForm:     form.New(logger),
+		pages.PageSubmit:   submit.New(logger),
 	}
 
 	// Create spinner
@@ -170,9 +172,10 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Error == nil {
 			m.log.Info("Form submitted", "zID", m.data.zID)
-
-			// TODO: replace with page change to submission result page
-			return m, tea.Quit
+			return m, tea.Sequence(
+				messages.SendPageChange(pages.PageSubmit),
+				messages.SendPublicSubmitFormResult(msg.RefCode, msg.Error),
+			)
 		}
 	case spinner.TickMsg:
 		m.loadingSpinner, cmd = m.loadingSpinner.Update(msg)
