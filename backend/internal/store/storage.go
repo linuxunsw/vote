@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -25,9 +26,11 @@ type OTPEntry struct {
 	CreatedAt   time.Time `db:"created_at"`
 }
 
+var OTPRateLimitExceeded = errors.New("rate limit exceeded")
+
 type OTPStore interface {
-	// Create or replace OTP entry given zid and code. Be sure to check if the user
-	// has an active OTP code to avoid them repeatedly generating codes.
+	// Create or replace OTP entry given zid and code. This will manage ratelimits
+	// and return error OTPRateLimitExceeded if the ratelimit is exceeded.
 	CreateOrReplace(ctx context.Context, zid string, code string) (err error)
 
 	// Gets the active OTP entry for a given zid. Returns valid OTPEntry if exists,
@@ -37,6 +40,6 @@ type OTPStore interface {
 	// Validates a plaintext code with the entry in the database.
 	ValidateAndConsume(ctx context.Context, zid string, code string) (valid bool, reason OTPValidate, err error)
 
-	// Consumes an OTP code owned by zid unconditionally.
+	// Consumes an OTP code owned by zid unconditionally. Clears ratelimits.
 	ConsumeIfExists(ctx context.Context, zid string) error
 }
