@@ -312,6 +312,15 @@ func TestValidateAndConsumeAttemptsExceeded(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows(otpRows).
 			AddRow(zid, st.hashCode(code), st.maxRetry, testNowBegin))
 
+	mock.ExpectBegin()
+	mock.ExpectExec(`delete from otp where zid`).
+		WithArgs(zid). // deleted
+		WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectExec(`delete from otp_ratelimit where zid`).
+		WithArgs(zid). // deleted
+		WillReturnResult(pgxmock.NewResult("DELETE", 1))
+	mock.ExpectCommit()
+
 	shimNow(st, testNowBegin)
 	valid, reason, err := st.ValidateAndConsume(ctx, zid, code)
 	if err != nil {
