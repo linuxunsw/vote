@@ -193,7 +193,12 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 		return false, store.OTPValidateNotFoundOrExpired, nil
 	}
 
+	// when attempts are exeeded, the OTP is invalidated
 	if otp.RetryAmount >= st.maxRetry {
+		err = st.ConsumeIfExists(ctx, zid)
+		if err != nil {
+			return false, store.OTPValidateInternalError, err
+		}
 		return false, store.OTPValidateAttemptsExceeded, nil
 	}
 
@@ -206,7 +211,7 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 	} else {
 		// increment retries
 		_, err = tx.Exec(ctx, `
-			update otp set attempts = $2
+			update otp set retry_amount = $2
 			where zid = $1
 		`, zid, otp.RetryAmount)
 	}
