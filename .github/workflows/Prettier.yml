@@ -1,0 +1,24 @@
+name: Prettier
+on:
+  workflow_call:
+    inputs:
+      subrepo:
+        required: true
+        type: string
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: prettier
+        # TODO: Ideally we would use the upstream version, but that is broken due to not supporting fail_level
+        # https://github.com/EPMatt/reviewdog-action-prettier/issues/72 (the issue is misguided but might still be useful for trcacking)
+        uses: gcaracuel/reviewdog-action-prettier@ddacbf3caf877fd012b68601baa1903cde600bc7
+        with:
+          fail_level: any
+          filter_mode: nofilter
+          reporter: github-check
+          workdir: ${{ inputs.subrepo }}
