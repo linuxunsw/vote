@@ -1,10 +1,15 @@
 name: Handoff
-on: pull_request
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 jobs:
   handoff:
     runs-on: ubuntu-latest
     outputs:
       category: ${{ steps.changed-file-extensions.outputs.category }}
+      directory: ${{ steps.changed-file-extensions.outputs.directory }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -12,21 +17,37 @@ jobs:
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v46
-      - name: Get extensions of changed files
+      - name: Get directories and extensions of changed files
         id: changed-file-extensions
         run: |
           category=
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            directory+=" $(echo $file | cut -d/ -f1)"
             ext="${file##*.}"
             case $ext in
               go)
                 category+=" Go";;
+              ts)
+                category+=" TypeScript";;
+              yml)
+                category+=" Yaml";;
               *)
                 echo "Unable to check syntax of $file.";;
             esac
           done
           echo "category=$category" >> $GITHUB_OUTPUT
-  go:
+          echo "directory=$directory" >> $GITHUB_OUTPUT
+
+  tui-golint:
     needs: handoff
-    if: contains(needs.handoff.outputs.category, 'Go')
+    if: contains(needs.handoff.outputs.category, 'Go') && contains(needs.handoff.outputs.directory, 'tui')
     uses: ./.github/workflows/Golint.yml
+    with:
+      subrepo: tui
+
+  web-tsc:
+    needs: handoff
+    uses: ./.github/workflows/Tsc.yml
+    if: contains(needs.handoff.outputs.category, 'TypeScript') && contains(needs.handoff.outputs.directory, 'web')
+    with:
+      subrepo: web
