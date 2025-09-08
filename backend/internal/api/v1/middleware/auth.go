@@ -73,9 +73,7 @@ func CookieAuthenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Conte
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Missing session cookie", err)
 			return
-
 		}
-
 		tokenString := sessionCookie.Value
 
 		// Convert the given secret into type jwt.Key (symmetric key)
