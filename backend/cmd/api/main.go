@@ -95,7 +95,6 @@ func main() {
 		RateLimitCfg:    cfg.Server.RateLimit,
 		RealIPAllowlist: cfg.Server.RealIPAllowlist,
 	}
-	logger.Info("ALLOWLIST REAL IP", "ips", cfg.Server.RealIPAllowlist)
 	err = middleware.AddGlobalMiddleware(api, opts)
 	if err != nil {
 		logger.Error("Unable to add global middleware", "error", err)
