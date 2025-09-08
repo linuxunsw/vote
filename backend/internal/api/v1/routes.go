@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"log/slog"
+
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
@@ -12,7 +14,7 @@ import (
 )
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, store store.Store, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, logger *slog.Logger, store store.Store, mailer mailer.Mailer, checker health.Checker) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
@@ -37,8 +39,12 @@ func Register(api huma.API, store store.Store, mailer mailer.Mailer, checker hea
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
-
-	authMiddleware := middleware.Authenticator(api, config.Load().JWT)
+	userRoutes.UseSimpleModifier(func(op *huma.Operation) {
+		op.Security = []map[string][]string{
+			{"cookieAuth": {}},
+		}
+	})
+	authMiddleware := middleware.CookieAuthenticator(api, config.Load().JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
 	// huma.Register(userRoutes, huma.Operation{

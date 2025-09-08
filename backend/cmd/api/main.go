@@ -73,7 +73,15 @@ func main() {
 
 	// init api
 	router := http.NewServeMux()
-	api := humago.New(router, huma.DefaultConfig("Vote API", cfg.API.Version))
+	humaCfg := huma.DefaultConfig("Vote API", cfg.API.Version)
+	humaCfg.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		"cookieAuth": {
+			Type: "apiKey",
+			In:   "cookie",
+			Name: cfg.JWT.CookieName,
+		},
+	}
+	api := humago.New(router, humaCfg)
 
 	// init crossorigin
 	crossOrigin := http.NewCrossOriginProtection()
@@ -101,7 +109,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	v1.Register(api, nil, nil, health)
+	v1.Register(api, logger, nil, nil, health)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {

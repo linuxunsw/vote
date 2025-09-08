@@ -25,7 +25,7 @@ type UserClaims struct {
 
 // Authenticator creates a Huma middleware to validate JWTs.
 // FIXME: cookie auth instead of bearer token? THIS IS SUBJECT TO CHANGE
-func Authenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
+func BearerAuthenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
 	return func(ctx huma.Context, next func(ctx huma.Context)) {
 		authHeader := ctx.Header("Authorization")
 		if authHeader == "" {
@@ -39,6 +39,44 @@ func Authenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, ne
 			return
 		}
 		tokenString := parts[1]
+
+		// Convert the given secret into type jwt.Key (symmetric key)
+		key, err := jwk.Import([]byte(cfg.Secret))
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusInternalServerError, "Unable to authenticate")
+			return
+		}
+
+		// Parse and verify the token, validate it too
+		token, err := jwt.ParseString(tokenString, jwt.WithKey(jwa.HS256(), key), jwt.WithValidate(true), jwt.WithIssuer(cfg.Issuer), jwt.WithPedantic(true))
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Invalid or expired token")
+			return
+		}
+
+		// Extract custom claims into UserClaims.
+		claims := &UserClaims{}
+		token.Get("isAdmin", &claims.IsAdmin)
+		claims.ZID, _ = token.Subject()
+
+		// Put the claims into the request context and create a new huma.Context.
+		newCtx := context.WithValue(ctx.Context(), userContextKey, claims)
+		ctx = huma.WithContext(ctx, newCtx)
+
+		next(ctx)
+	}
+}
+
+func CookieAuthenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
+	return func(ctx huma.Context, next func(ctx huma.Context)) {
+		sessionCookie, err := huma.ReadCookie(ctx, cfg.CookieName)
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Missing session cookie", err)
+			return
+
+		}
+
+		tokenString := sessionCookie.Value
 
 		// Convert the given secret into type jwt.Key (symmetric key)
 		key, err := jwk.Import([]byte(cfg.Secret))

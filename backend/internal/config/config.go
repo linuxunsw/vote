@@ -37,9 +37,10 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret   string
-	Duration time.Duration
-	Issuer   string
+	Secret     string
+	CookieName string
+	Duration   time.Duration
+	Issuer     string
 }
 
 type OTPConfig struct {
@@ -94,9 +95,10 @@ func Load() Config {
 			MaxIdleTime:        GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
 		JWT: JWTConfig{
-			Secret:   GetString("JWT_SECRET", "DONTUSEMEINPRODPLEASE"),
-			Duration: time.Minute * 30,
-			Issuer:   "vote-api",
+			Secret:     GetString("JWT_SECRET", "DONTUSEMEINPRODPLEASE"),
+			CookieName: "SESSION",
+			Duration:   time.Minute * 30,
+			Issuer:     "vote-api",
 		},
 		OTP: OTPConfig{
 			Secret:   GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
