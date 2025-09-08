@@ -47,13 +47,13 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 	authMiddleware := middleware.CookieAuthenticator(api, config.Load().JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "submit-nomination",
-	// 	Method:      "POST",
-	// 	Path:        "/nominations",
-	// 	Summary:     "Submit a self-nomination",
-	// 	Tags:        []string{"Nominations"},
-	// }, handlers.SubmitNomination(store))
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "submit-nomination",
+		Method:      "POST",
+		Path:        "/nominations",
+		Summary:     "Submit a self-nomination",
+		Tags:        []string{"Nominations"},
+	}, handlers.SubmitNomination(logger, store))
 	//
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
