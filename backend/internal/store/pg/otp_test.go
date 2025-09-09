@@ -359,7 +359,7 @@ func TestValidateAndConsumeMismatch(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows(otpRows).
 			AddRow(zid, st.hashCode(code), 0, testNowBegin))
 
-	mock.ExpectExec(`update otp set attempts`).
+	mock.ExpectExec(`update otp set retry_amount`).
 		WithArgs(zid, 1). // incremented
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
