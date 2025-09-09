@@ -49,8 +49,8 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "submit-nomination",
-		Method:      "POST",
-		Path:        "/nominations",
+		Method:      "PUT",
+		Path:        "/nomination",
 		Summary:     "Submit a self-nomination",
 		Tags:        []string{"Nominations"},
 	}, handlers.SubmitNomination(logger, store))
