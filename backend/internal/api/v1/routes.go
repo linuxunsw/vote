@@ -11,13 +11,16 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
+type RegisterStores struct {
+	OtpStore store.OTPStore
+}
+
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, cfg config.Config, stores RegisterStores, mailer mailer.Mailer, checker health.Checker) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
 	huma.Get(api, "/health", handlers.GetHealth(checker))
-	cfg := config.Load()
 
 	// == Authentication Routes ==
 	huma.Register(v1, huma.Operation{
@@ -26,7 +29,7 @@ func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, check
 		Path:        "/otp/generate",
 		Summary:     "Generate an OTP code",
 		Tags:        []string{"OTP"},
-	}, handlers.GenerateOTP(otpStore, mailer))
+	}, handlers.GenerateOTP(stores.OtpStore, mailer))
 
 	huma.Register(v1, huma.Operation{
 		OperationID: "submit-otp",
@@ -34,7 +37,7 @@ func Register(api huma.API, otpStore store.OTPStore, mailer mailer.Mailer, check
 		Path:        "/otp/submit",
 		Summary:     "Submit an OTP to enter a session",
 		Tags:        []string{"OTP"},
-	}, handlers.SubmitOTP(otpStore, cfg.JWT))
+	}, handlers.SubmitOTP(stores.OtpStore, cfg.JWT))
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)

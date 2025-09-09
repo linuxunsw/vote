@@ -58,18 +58,7 @@ func main() {
 		)
 	}
 
-	// db
-	// FIXME: implement
-	// pool, err := db.Connect(cfg.Database)
-	// if err != nil {
-	// 	log.Fatal("Unable to connect to database", zap.Error(err))
-	// }
-	// defer pool.Close()
-
-	// init repository and email client
-	// store := TODO:
-	// emailClient := TODO:
-
+	// initialise database
 	pool, err := pgxpool.New(context.Background(), cfg.Database.Address)
 	if err != nil {
 		log.Fatal("Unable to connect to database", err)
@@ -111,9 +100,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	// setup stores
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
 
-	v1.Register(api, otpStore, nil, health)
+	stores := v1.RegisterStores{
+		OtpStore: otpStore,
+	}
+
+	v1.Register(api, cfg, stores, nil, health)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {

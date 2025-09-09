@@ -11,7 +11,8 @@ import (
 
 func TestOTPConsumeOnce(t *testing.T) {
 	pool := harness.EphemeralPool(t)
-	otpStore := pg.NewPgOTPStore(pool, config.Load().OTP)
+	otpConfig := config.Load().OTP
+	otpStore := pg.NewPgOTPStore(pool, otpConfig)
 	ctx := t.Context()
 
 	zid := "z0000000"
