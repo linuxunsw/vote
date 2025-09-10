@@ -2,22 +2,11 @@ package handlers_test
 
 import (
 	"encoding/json"
-	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
-
-// Assumes there will be one cookie sent back, the JWT cookie.
-func intoJWTCookie(headers http.Header) string {
-	sc := headers.Get("Set-Cookie")
-	// Example: "SESSION=abc123; Path=/; HttpOnly; Secure"
-	parts := strings.Split(sc, ";")
-	kv := strings.TrimSpace(parts[0]) // "SESSION=abc123"
-	return "Cookie: " + kv
-}
 
 func TestNominationSubmit(t *testing.T) {
 	cfg := config.Load()
@@ -51,7 +40,7 @@ func TestNominationSubmit(t *testing.T) {
 		t.Fatalf("expected Set-Cookie header, got none")
 	}
 
-	cookie := intoJWTCookie(res.Header)
+	cookie := extractCookieHeader(res.Header)
 	resp = api.Put("/api/v1/nomination", cookie, map[string]any{
 		"candidate_name":      "John Doe",
 		"contact_email":       "john@example.com",
