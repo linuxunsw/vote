@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/httplog/v3"
@@ -19,6 +20,7 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/logger"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
+	"github.com/linuxunsw/vote/backend/internal/store/migrations"
 	"github.com/linuxunsw/vote/backend/internal/store/pg"
 	"github.com/pressly/goose/v3"
 
@@ -197,19 +199,19 @@ func createMigrateCommand(log *slog.Logger, cfg config.Config) *cobra.Command {
 				_ = db.Close()
 			}()
 
-			if err := goose.SetDialect("postgres"); err != nil {
-				log.Error("Failed to set Goose dialect", "error", err)
+			migrationsProvider, err := goose.NewProvider(goose.DialectPostgres, db, migrations.Migrations)
+			if err != nil {
+				log.Error("Failed to create migrations provider", "error", err)
 				os.Exit(1)
 			}
 
-			// NOTE: maybe use embeded migrations? see docs
-			// FIXME: use correct directory
 			fmt.Println("Running migrations...")
-			if err := goose.Up(db, "store/migrations"); err != nil {
-				log.Error("Migration failed", "error", err)
+			migrations, err := migrationsProvider.Up(context.Background())
+			if err != nil {
+				log.Error("Failed to run migrations", "error", err)
 				os.Exit(1)
 			}
-			log.Info("Migrations applied successfully!")
+			log.Info("migrations applied successfully", "migrations", strconv.Itoa(len(migrations)))
 		},
 	}
 }
