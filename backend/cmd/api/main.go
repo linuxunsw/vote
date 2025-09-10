@@ -4,18 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/go-chi/httplog/v3"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	v1 "github.com/linuxunsw/vote/backend/internal/api/v1"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/logger"
+	"github.com/linuxunsw/vote/backend/internal/store/pg"
 	"github.com/pressly/goose/v3"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -55,17 +58,12 @@ func main() {
 		)
 	}
 
-	// db
-	// FIXME: implement
-	// pool, err := db.Connect(cfg.Database)
-	// if err != nil {
-	// 	log.Fatal("Unable to connect to database", zap.Error(err))
-	// }
-	// defer pool.Close()
-
-	// init repository and email client
-	// store := TODO:
-	// emailClient := TODO:
+	// initialise database
+	pool, err := pgxpool.New(context.Background(), cfg.Database.Address)
+	if err != nil {
+		log.Fatal("Unable to connect to database", err)
+	}
+	defer pool.Close()
 
 	// start healthcheck
 	health := handlers.NewChecker(logger, nil)
@@ -102,7 +100,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	v1.Register(api, nil, nil, health)
+	// setup stores
+	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
+
+	stores := v1.RegisterStores{
+		OtpStore: otpStore,
+	}
+
+	v1.Register(api, cfg, stores, nil, health)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
