@@ -65,7 +65,7 @@ func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores Regis
 	}, map[string]any{
 		"stateChange": &models.StateChangeEvent{},
 	},
-		handlers.GetState)
+		handlers.GetState(logger))
 
 	// nomination
 	huma.Register(userRoutes, huma.Operation{

@@ -26,7 +26,7 @@ func New(cfg config.LoggerConfig, opts *slog.HandlerOptions) (*slog.Logger, erro
 	opts.AddSource = cfg.AddSource
 
 	var h slog.Handler
-	if cfg.PrettyPrint == true {
+	if cfg.PrettyPrint {
 		// devslog provides colorful text handler implementing slog.Handler
 		h = devslog.NewHandler(os.Stdout, &devslog.Options{
 			SortKeys:           true,
