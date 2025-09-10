@@ -74,8 +74,17 @@ func GenerateOTP(log *slog.Logger, st store.OTPStore, mailer mailer.Mailer) func
 	}
 }
 
+func isAdminConfig(adminCfg config.AdminConfig, zid string) bool {
+	for _, admin := range adminCfg.AdminZIds {
+		if zid == admin {
+			return true
+		}
+	}
+	return false
+}
+
 // Huma submit OTP handler
-func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg config.JWTConfig) func(ctx context.Context, input *models.SubmitOTPInput) (*models.SubmitOTPResponse, error) {
+func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg config.JWTConfig, adminCfg config.AdminConfig) func(ctx context.Context, input *models.SubmitOTPInput) (*models.SubmitOTPResponse, error) {
 	return func(ctx context.Context, input *models.SubmitOTPInput) (*models.SubmitOTPResponse, error) {
 		valid, reason, err := st.ValidateAndConsume(ctx, input.Body.Zid, input.Body.Otp)
 		if err != nil {
@@ -118,9 +127,11 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 			return nil, huma.Error403Forbidden("not authorized to vote")
 		}
 
+		isAdmin := isAdminConfig(adminCfg, input.Body.Zid)
+
 		// user is now authenticated and authorised as a society member
 		// create JWT
-		token, err := jwt.NewBuilder().Issuer(cfg.Issuer).Subject(input.Body.Zid).Claim("isAdmin", false).Build()
+		token, err := jwt.NewBuilder().Issuer(cfg.Issuer).Subject(input.Body.Zid).Claim("isAdmin", isAdmin).Build()
 		if err != nil {
 			log.Error("failed to build JWT", "error", err, "request_id", requestid.Get(ctx))
 			return nil, huma.Error500InternalServerError("internal error")

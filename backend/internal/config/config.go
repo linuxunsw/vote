@@ -13,6 +13,7 @@ type Config struct {
 	OTP      OTPConfig
 	Mailer   MailerConfig
 	Logger   LoggerConfig
+	Admin    AdminConfig
 }
 
 type APIConfig struct {
@@ -77,6 +78,10 @@ type RateLimitConfig struct {
 	WindowLength time.Duration
 }
 
+type AdminConfig struct {
+	AdminZIds []string
+}
+
 func Load() Config {
 	config := Config{
 		API: APIConfig{
@@ -128,6 +133,9 @@ func Load() Config {
 				HeaderValue: GetString("LOGGER_DEBUG_HEADER_VALUE", "show-body"),
 			},
 			RequestIDHeader: GetString("LOGGER_REQUEST_ID_HEADER", "X-Request-ID"),
+		},
+		Admin: AdminConfig{
+			AdminZIds: SplitAndTrim(GetString("ADMIN_ZIDS", "")),
 		},
 	}
 
