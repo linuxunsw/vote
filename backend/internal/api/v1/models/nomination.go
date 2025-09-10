@@ -12,7 +12,7 @@ type SubmitNominationRequest struct {
 		CandidateName      string   `json:"candidate_name" minLength:"2" maxLength:"100" example:"John Doe"`
 		ContactEmail       string   `json:"contact_email" format:"email" example:"john@example.com"`
 		DiscordUsername    string   `json:"discord_username" maxLength:"32" example:"johndoe"`
-		ExecutiveRoles     []string `json:"executive_roles" minItems:"1" maxItems:"6" uniqueItems:"true" enum:"president,secretary,treasurer,arc_delegate,edi_officer,greivance_officer" example:"[\"president\", \"secretary\"]"`
+		ExecutiveRoles     []string `json:"executive_roles" minItems:"1" maxItems:"6" uniqueItems:"true" enum:"president,secretary,treasurer,arc_delegate,edi_officer,grievance_officer" example:"[\"president\", \"secretary\"]"`
 		CandidateStatement string   `json:"candidate_statement" required:"true" minLength:"50" maxLength:"2000" example:"I am running for president because..."`
 		URL                *string  `json:"url" format:"uri" required:"false" example:"https://johndoe.com"`
 	}
