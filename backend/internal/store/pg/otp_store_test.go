@@ -1,18 +1,17 @@
-package tests
+package pg
 
 import (
 	"testing"
 
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/store"
-	"github.com/linuxunsw/vote/backend/internal/store/pg"
 	"github.com/linuxunsw/vote/backend/internal/tests/harness"
 )
 
 func TestOTPConsumeOnce(t *testing.T) {
 	pool := harness.EphemeralPool(t)
 	otpConfig := config.Load().OTP
-	otpStore := pg.NewPgOTPStore(pool, otpConfig)
+	otpStore := NewPgOTPStore(pool, otpConfig)
 	ctx := t.Context()
 
 	zid := "z0000000"
@@ -53,7 +52,7 @@ func TestOTPConsumeOnce(t *testing.T) {
 func TestOTPReachRetryLimit(t *testing.T) {
 	pool := harness.EphemeralPool(t)
 	otpConfig := config.Load().OTP
-	otpStore := pg.NewPgOTPStore(pool, otpConfig)
+	otpStore := NewPgOTPStore(pool, otpConfig)
 	ctx := t.Context()
 
 	zid := "z0000000"
@@ -85,7 +84,7 @@ func TestOTPReachRetryLimit(t *testing.T) {
 func TestOTPReachRatelimit(t *testing.T) {
 	pool := harness.EphemeralPool(t)
 	otpConfig := config.Load().OTP
-	otpStore := pg.NewPgOTPStore(pool, otpConfig)
+	otpStore := NewPgOTPStore(pool, otpConfig)
 	ctx := t.Context()
 
 	zid := "z0000000"
