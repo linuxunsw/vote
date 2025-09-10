@@ -18,6 +18,7 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/logger"
+	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store/pg"
 	"github.com/pressly/goose/v3"
 
@@ -107,19 +108,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// init mailer
+	mailer := mailer.NewResendMailer(cfg)
+
 	// setup stores
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
 	electionStore := pg.NewPgElectionStore(pool)
 
-	stores := v1.HandlerDependencies{
-		Logger:   logger,
-		Cfg:      cfg,
-		Mailer:   nil,
-		Checker:  health,
-		OtpStore: otpStore,
+	deps := v1.HandlerDependencies{
+		Logger:        logger,
+		Cfg:           cfg,
+		Mailer:        mailer,
+		Checker:       health,
+		OtpStore:      otpStore,
 		ElectionStore: electionStore,
 	}
-	v1.Register(api, stores)
+	v1.Register(api, deps)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
