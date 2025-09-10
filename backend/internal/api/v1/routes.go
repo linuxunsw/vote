@@ -16,29 +16,33 @@ import (
 	"github.com/danielgtaylor/huma/v2/sse"
 )
 
+type RegisterStores struct {
+	OtpStore store.OTPStore
+}
+
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, logger *slog.Logger, store store.Store, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores RegisterStores, mailer mailer.Mailer, checker health.Checker) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
 	huma.Get(api, "/health", handlers.GetHealth(checker))
 
 	// == Authentication Routes ==
-	// huma.Register(v1, huma.Operation{
-	// 	OperationID: "auth-request-otp",
-	// 	Method:      "POST",
-	// 	Path:        "/auth/request-otp",
-	// 	Summary:     "Request an OTP",
-	// 	Tags:        []string{"Auth"},
-	// }, handlers.RequestOTP(store, mailer))
-	//
-	// huma.Register(v1, huma.Operation{
-	// 	OperationID: "auth-verify-otp",
-	// 	Method:      "POST",
-	// 	Path:        "/auth/verify-otp",
-	// 	Summary:     "Verify an OTP to get a JWT",
-	// 	Tags:        []string{"Auth"},
-	// }, handlers.VerifyOTP(store, jwtSecret))
+	huma.Register(v1, huma.Operation{
+		OperationID: "generate-otp",
+		Method:      "POST",
+		Path:        "/otp/generate",
+		Summary:     "Generate an OTP code",
+		Tags:        []string{"OTP"},
+	}, handlers.GenerateOTP(stores.OtpStore, mailer))
+
+	huma.Register(v1, huma.Operation{
+		OperationID: "submit-otp",
+		Method:      "POST",
+		Path:        "/otp/submit",
+		Summary:     "Submit an OTP to enter a session",
+		Tags:        []string{"OTP"},
+	}, handlers.SubmitOTP(stores.OtpStore, cfg.JWT))
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
@@ -47,7 +51,7 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 			{"cookieAuth": {}},
 		}
 	})
-	authMiddleware := middleware.CookieAuthenticator(api, config.Load().JWT)
+	authMiddleware := middleware.CookieAuthenticator(api, cfg.JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
 	// state updates via SSE
@@ -71,7 +75,7 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 		Summary:     "Submit self-nomination",
 		Description: "Creates a self-nomination for the current election, replacing an existing one.",
 		Tags:        []string{"Nominations"},
-	}, handlers.SubmitNomination(logger, store))
+	}, handlers.SubmitNomination(logger, nil))
 
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "get-nomination",
@@ -80,7 +84,7 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 		Summary:     "Get self-nomination",
 		Description: "Retrieves an existing self-nomination (if any) for the current election.",
 		Tags:        []string{"Nominations"},
-	}, handlers.GetNomination(logger, store))
+	}, handlers.GetNomination(logger, nil))
 
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
