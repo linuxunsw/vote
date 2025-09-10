@@ -119,7 +119,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 	huma.Register(adminRoutes, huma.Operation{
 		OperationID: "create-election",
 		Method:      http.MethodPost,
-		Path:        "/election",
+		Path:        "/elections",
 		Summary:     "Create an election",
 		Tags:        []string{"Elections"},
 	}, handlers.CreateElection(deps.Logger, deps.ElectionStore))
@@ -127,7 +127,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 	huma.Register(adminRoutes, huma.Operation{
 		OperationID: "set-election-members",
 		Method:      http.MethodPut,
-		Path:        "/election/{election_id}/members",
+		Path:        "/elections/{election_id}/members",
 		Summary:     "Set the member list for an election",
 		Tags:        []string{"Elections"},
 	}, handlers.ElectionMemberListSet(deps.Logger, deps.ElectionStore))
@@ -135,7 +135,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 	// huma.Register(adminRoutes, huma.Operation{
 	// 	OperationID: "admin-update-election-state",
 	// 	Method:      "PUT",
-	// 	Path:        "/election/state",
+	// 	Path:        "/elections/state",
 	// 	Summary:     "Update the election state",
 	// 	Tags:        []string{"Admin"},
 	// }, handlers.UpdateElectionState(store))
