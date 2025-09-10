@@ -101,11 +101,14 @@ func EphemeralPool(t *testing.T) *pgxpool.Pool {
 
 	// migrations
 	migrationsProvider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.Migrations)
+	if err != nil {
+		t.Fatalf("failed to create migrations provider for ephemeral database %s: %v", testDBName, err)
+	}
 	_, err = migrationsProvider.Up(ctx) // apply all migrations
 	if err != nil {
 		t.Fatalf("failed to run migrations on ephemeral database %s: %v", testDBName, err)
 	}
-	sqlDB.Close()
+	_ = sqlDB.Close()
 
 	pool, err := pgxpool.New(ctx, configToURL(connectionConfig))
 

@@ -102,12 +102,17 @@ func main() {
 
 	// setup stores
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
+	electionStore := pg.NewPgElectionStore(pool)
 
-	stores := v1.RegisterStores{
+	stores := v1.HandlerDependencies{
+		Logger:   logger,
+		Cfg:      cfg,
+		Mailer:   nil,
+		Checker:  health,
 		OtpStore: otpStore,
+		ElectionStore: electionStore,
 	}
-
-	v1.Register(api, cfg, stores, nil, health)
+	v1.Register(api, stores)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {

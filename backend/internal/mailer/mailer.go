@@ -1,3 +1,5 @@
 package mailer
 
-type Mailer interface{}
+type Mailer interface{
+	SendOTP(toEmail string, otpCode string) error
+}

@@ -65,7 +65,9 @@ func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code stri
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	codeHash := st.hashCode(code)
 	now := st.nowProvider()
@@ -93,7 +95,7 @@ func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code stri
 		// rate limiting applies
 		if ratelimitEntry.WindowStart.Add(st.rateLimitWithin).After(now) {
 			if ratelimitEntry.Count >= st.ratelimitCount {
-				return store.OTPRateLimitExceeded
+				return store.ErrOTPRateLimitExceeded
 			}
 
 			ratelimitEntry.Count++
@@ -179,7 +181,9 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 	if err != nil {
 		return false, store.OTPValidateInternalError, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	otp, err := st.activeForUpdate(ctx, zid)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -235,7 +239,9 @@ func (st *pgOTPStore) ConsumeIfExists(ctx context.Context, zid string) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	_, err = st.pool.Exec(ctx, `
 		delete from otp where zid = $1;

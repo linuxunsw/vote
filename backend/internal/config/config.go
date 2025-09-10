@@ -37,9 +37,10 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret   string
-	Duration time.Duration
-	Issuer   string
+	Secret     string
+	CookieName string
+	Duration   time.Duration
+	Issuer     string
 }
 
 type OTPConfig struct {
@@ -47,7 +48,7 @@ type OTPConfig struct {
 	MaxRetry int
 	Duration time.Duration
 
-	RatelimitCount int
+	RatelimitCount  int
 	RatelimitWithin time.Duration
 }
 
@@ -97,15 +98,16 @@ func Load() Config {
 			MaxIdleTime:        GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
 		JWT: JWTConfig{
-			Secret:   GetString("JWT_SECRET", "DONTUSEMEINPRODPLEASE"),
-			Duration: time.Minute * 30,
-			Issuer:   "vote-api",
+			Secret:     GetString("JWT_SECRET", "DONTUSEMEINPRODPLEASE"),
+			CookieName: "SESSION",
+			Duration:   time.Minute * 30,
+			Issuer:     "vote-api",
 		},
 		OTP: OTPConfig{
-			Secret:   GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
-			MaxRetry: 10,
-			Duration: time.Minute * 10,
-			RatelimitCount: 3,
+			Secret:          GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
+			MaxRetry:        10,
+			Duration:        time.Minute * 10,
+			RatelimitCount:  3,
 			RatelimitWithin: time.Minute * 5,
 		},
 		Mailer: MailerConfig{

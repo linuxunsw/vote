@@ -1,9 +1,11 @@
 package v1
 
 import (
+	"log/slog"
+	"net/http"
+
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
-	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store"
@@ -11,39 +13,50 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-type RegisterStores struct {
+type HandlerDependencies struct {
+	Logger *slog.Logger
+
+	Cfg config.Config
+
+	Mailer mailer.Mailer
+	Checker health.Checker
+
+	// Stores
 	OtpStore store.OTPStore
+	ElectionStore store.ElectionStore
 }
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, cfg config.Config, stores RegisterStores, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, deps HandlerDependencies) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
-	huma.Get(api, "/health", handlers.GetHealth(checker))
+	huma.Get(api, "/health", handlers.GetHealth(deps.Checker))
 
 	// == Authentication Routes ==
 	huma.Register(v1, huma.Operation{
 		OperationID: "generate-otp",
-		Method:      "POST",
+		Method:      http.MethodPost,
 		Path:        "/otp/generate",
 		Summary:     "Generate an OTP code",
 		Tags:        []string{"OTP"},
-	}, handlers.GenerateOTP(stores.OtpStore, mailer))
+	}, handlers.GenerateOTP(deps.Logger, deps.OtpStore, deps.Mailer))
 
 	huma.Register(v1, huma.Operation{
 		OperationID: "submit-otp",
-		Method:      "POST",
+		Method:      http.MethodPost,
 		Path:        "/otp/submit",
 		Summary:     "Submit an OTP to enter a session",
 		Tags:        []string{"OTP"},
-	}, handlers.SubmitOTP(stores.OtpStore, cfg.JWT))
+	}, handlers.SubmitOTP(deps.Logger, deps.OtpStore, deps.ElectionStore, deps.Cfg.JWT))
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
 
-	authMiddleware := middleware.Authenticator(api, cfg.JWT)
-	userRoutes.UseMiddleware(authMiddleware)
+	// TODO THIS IGNORES AUTH AT THE MOMENT. Please fix
+
+	/* authMiddleware := middleware.Authenticator(api, deps.Cfg.JWT)
+	userRoutes.UseMiddleware(authMiddleware) */
 
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "submit-nomination",
@@ -71,9 +84,25 @@ func Register(api huma.API, cfg config.Config, stores RegisterStores, mailer mai
 
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.
-	// adminRoutes := huma.NewGroup(userRoutes, "/admin")
-	// adminRoutes.UseMiddleware(middleware.RequireAdmin(api))
-	//
+	adminRoutes := huma.NewGroup(userRoutes, "/admin")
+	/* adminRoutes.UseMiddleware(middleware.RequireAdmin(api)) */
+	
+	huma.Register(adminRoutes, huma.Operation{
+		OperationID: "create-election",
+		Method:      http.MethodPost,
+		Path:        "/election",
+		Summary:     "Create an election",
+		Tags:        []string{"Elections"},
+	}, handlers.CreateElection(deps.Logger, deps.ElectionStore))
+
+	huma.Register(adminRoutes, huma.Operation{
+		OperationID: "set-election-members",
+		Method:      http.MethodPut,
+		Path:        "/election/{election_id}/members",
+		Summary:     "Set the member list for an election",
+		Tags:        []string{"Elections"},
+	}, handlers.ElectionMemberListSet(deps.Logger, deps.ElectionStore))
+
 	// huma.Register(adminRoutes, huma.Operation{
 	// 	OperationID: "admin-update-election-state",
 	// 	Method:      "PUT",
