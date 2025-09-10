@@ -71,7 +71,15 @@ func main() {
 
 	// init api
 	router := http.NewServeMux()
-	api := humago.New(router, huma.DefaultConfig("Vote API", cfg.API.Version))
+	humaCfg := huma.DefaultConfig("Vote API", cfg.API.Version)
+	humaCfg.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		"cookieAuth": {
+			Type: "apiKey",
+			In:   "cookie",
+			Name: cfg.JWT.CookieName,
+		},
+	}
+	api := humago.New(router, humaCfg)
 
 	// init crossorigin
 	crossOrigin := http.NewCrossOriginProtection()
@@ -93,7 +101,6 @@ func main() {
 		RateLimitCfg:    cfg.Server.RateLimit,
 		RealIPAllowlist: cfg.Server.RealIPAllowlist,
 	}
-	logger.Info("ALLOWLIST REAL IP", "ips", cfg.Server.RealIPAllowlist)
 	err = middleware.AddGlobalMiddleware(api, opts)
 	if err != nil {
 		logger.Error("Unable to add global middleware", "error", err)
@@ -107,7 +114,7 @@ func main() {
 		OtpStore: otpStore,
 	}
 
-	v1.Register(api, cfg, stores, nil, health)
+	v1.Register(api, logger, cfg, stores, nil, health)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {

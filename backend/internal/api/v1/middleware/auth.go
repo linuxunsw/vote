@@ -25,17 +25,17 @@ type UserClaims struct {
 
 // Authenticator creates a Huma middleware to validate JWTs.
 // FIXME: cookie auth instead of bearer token? THIS IS SUBJECT TO CHANGE
-func Authenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
+func BearerAuthenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
 	return func(ctx huma.Context, next func(ctx huma.Context)) {
 		authHeader := ctx.Header("Authorization")
 		if authHeader == "" {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Missing Authorization header")
+			_ = huma.WriteErr(api, ctx, http.StatusUnauthorized, "Missing Authorization header")
 			return
 		}
 
 		parts := strings.Fields(authHeader)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Invalid Authorization header format")
+			_ = huma.WriteErr(api, ctx, http.StatusUnauthorized, "Invalid Authorization header format")
 			return
 		}
 		tokenString := parts[1]
@@ -43,20 +43,64 @@ func Authenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, ne
 		// Convert the given secret into type jwt.Key (symmetric key)
 		key, err := jwk.Import([]byte(cfg.Secret))
 		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusInternalServerError, "Unable to authenticate")
+			_ = huma.WriteErr(api, ctx, http.StatusInternalServerError, "Unable to authenticate")
 			return
 		}
 
 		// Parse and verify the token, validate it too
 		token, err := jwt.ParseString(tokenString, jwt.WithKey(jwa.HS256(), key), jwt.WithValidate(true), jwt.WithIssuer(cfg.Issuer), jwt.WithPedantic(true))
 		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Invalid or expired token")
+			_ = huma.WriteErr(api, ctx, http.StatusUnauthorized, "Invalid or expired token")
 			return
 		}
 
 		// Extract custom claims into UserClaims.
 		claims := &UserClaims{}
-		token.Get("isAdmin", &claims.IsAdmin)
+		err = token.Get("isAdmin", &claims.IsAdmin)
+		if err != nil {
+			_ = huma.WriteErr(api, ctx, http.StatusInternalServerError, "Unable to authenticate")
+			return
+		}
+		claims.ZID, _ = token.Subject()
+
+		// Put the claims into the request context and create a new huma.Context.
+		newCtx := context.WithValue(ctx.Context(), userContextKey, claims)
+		ctx = huma.WithContext(ctx, newCtx)
+
+		next(ctx)
+	}
+}
+
+func CookieAuthenticator(api huma.API, cfg config.JWTConfig) func(ctx huma.Context, next func(ctx huma.Context)) {
+	return func(ctx huma.Context, next func(ctx huma.Context)) {
+		sessionCookie, err := huma.ReadCookie(ctx, cfg.CookieName)
+		if err != nil {
+			_ = huma.WriteErr(api, ctx, http.StatusUnauthorized, "Missing session cookie", err)
+			return
+		}
+		tokenString := sessionCookie.Value
+
+		// Convert the given secret into type jwt.Key (symmetric key)
+		key, err := jwk.Import([]byte(cfg.Secret))
+		if err != nil {
+			_ = huma.WriteErr(api, ctx, http.StatusInternalServerError, "Unable to authenticate")
+			return
+		}
+
+		// Parse and verify the token, validate it too
+		token, err := jwt.ParseString(tokenString, jwt.WithKey(jwa.HS256(), key), jwt.WithValidate(true), jwt.WithIssuer(cfg.Issuer), jwt.WithPedantic(true))
+		if err != nil {
+			_ = huma.WriteErr(api, ctx, http.StatusUnauthorized, "Invalid or expired token")
+			return
+		}
+
+		// Extract custom claims into UserClaims.
+		claims := &UserClaims{}
+		err = token.Get("isAdmin", &claims.IsAdmin)
+		if err != nil {
+			_ = huma.WriteErr(api, ctx, http.StatusInternalServerError, "Unable to authenticate")
+			return
+		}
 		claims.ZID, _ = token.Subject()
 
 		// Put the claims into the request context and create a new huma.Context.
@@ -73,7 +117,7 @@ func RequireAdmin(api huma.API) func(ctx huma.Context, next func(ctx huma.Contex
 	return func(ctx huma.Context, next func(ctx huma.Context)) {
 		claims, ok := ctx.Context().Value(userContextKey).(*UserClaims)
 		if !ok || !claims.IsAdmin {
-			huma.WriteErr(api, ctx, http.StatusForbidden, "Admin access required")
+			_ = huma.WriteErr(api, ctx, http.StatusForbidden, "Admin access required")
 			return
 		}
 		next(ctx)

@@ -1,14 +1,19 @@
 package v1
 
 import (
+	"log/slog"
+	"net/http"
+
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/sse"
 )
 
 type RegisterStores struct {
@@ -16,7 +21,7 @@ type RegisterStores struct {
 }
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, cfg config.Config, stores RegisterStores, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores RegisterStores, mailer mailer.Mailer, checker health.Checker) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
@@ -41,18 +46,46 @@ func Register(api huma.API, cfg config.Config, stores RegisterStores, mailer mai
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
-
-	authMiddleware := middleware.Authenticator(api, cfg.JWT)
+	userRoutes.UseSimpleModifier(func(op *huma.Operation) {
+		op.Security = []map[string][]string{
+			{"cookieAuth": {}},
+		}
+	})
+	authMiddleware := middleware.CookieAuthenticator(api, cfg.JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "submit-nomination",
-	// 	Method:      "POST",
-	// 	Path:        "/nominations",
-	// 	Summary:     "Submit a self-nomination",
-	// 	Tags:        []string{"Nominations"},
-	// }, handlers.SubmitNomination(store))
-	//
+	// state updates via SSE
+	sse.Register(userRoutes, huma.Operation{
+		OperationID: "state",
+		Method:      http.MethodGet,
+		Path:        "/state",
+		Summary:     "Get State (SSE)",
+		Description: "Gets current election state changes as server sent events.",
+		Tags:        []string{"State"},
+	}, map[string]any{
+		"stateChange": &models.StateChangeEvent{},
+	},
+		handlers.GetState(logger))
+
+	// nomination
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "submit-nomination",
+		Method:      http.MethodPut,
+		Path:        "/nomination",
+		Summary:     "Submit self-nomination",
+		Description: "Creates a self-nomination for the current election, replacing an existing one.",
+		Tags:        []string{"Nominations"},
+	}, handlers.SubmitNomination(logger, nil))
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-nomination",
+		Method:      http.MethodGet,
+		Path:        "/nomination",
+		Summary:     "Get self-nomination",
+		Description: "Retrieves an existing self-nomination (if any) for the current election.",
+		Tags:        []string{"Nominations"},
+	}, handlers.GetNomination(logger, nil))
+
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
 	// 	Method:      "GET",
