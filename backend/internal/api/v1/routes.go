@@ -7,11 +7,13 @@ import (
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/sse"
 )
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
@@ -48,13 +50,26 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 	authMiddleware := middleware.CookieAuthenticator(api, config.Load().JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
+	// state updates via SSE
+	sse.Register(userRoutes, huma.Operation{
+		OperationID: "state",
+		Method:      http.MethodGet,
+		Path:        "/state",
+		Summary:     "Get State (SSE)",
+		Description: "Gets current election state changes as server sent events.",
+		Tags:        []string{"State"},
+	}, map[string]any{
+		"stateChange": &models.StateChangeEvent{},
+	},
+		handlers.GetState)
+
 	// nomination
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "submit-nomination",
 		Method:      http.MethodPut,
 		Path:        "/nomination",
 		Summary:     "Submit self-nomination",
-		Description: "Creates a self-nomination, replacing an existing one",
+		Description: "Creates a self-nomination for the current election, replacing an existing one.",
 		Tags:        []string{"Nominations"},
 	}, handlers.SubmitNomination(logger, store))
 
@@ -63,7 +78,7 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 		Method:      http.MethodGet,
 		Path:        "/nomination",
 		Summary:     "Get self-nomination",
-		Description: "Retrieves an existing self-nomination (if any)",
+		Description: "Retrieves an existing self-nomination (if any) for the current election.",
 		Tags:        []string{"Nominations"},
 	}, handlers.GetNomination(logger, store))
 
