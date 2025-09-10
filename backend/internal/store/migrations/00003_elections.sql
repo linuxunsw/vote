@@ -41,3 +41,4 @@ create index "elections_created_at_idx" on "elections" ("created_at");
 drop table "election_member_list";
 drop table "elections";
 drop type "election_status";
+drop index "elections_created_at_idx";
