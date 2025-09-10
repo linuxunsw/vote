@@ -10,7 +10,6 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 )
 
-// TODO: replace sleeps with api calls
 func GenerateOTPCmd(client *http.Client, zID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)

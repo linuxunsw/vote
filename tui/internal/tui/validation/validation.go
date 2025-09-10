@@ -2,9 +2,15 @@ package validation
 
 import (
 	"errors"
+	"fmt"
 	"net/mail"
 	"net/url"
 	"regexp"
+	"strings"
+)
+
+var (
+	emailError = errors.New("please enter a valid email address")
 )
 
 // Validates a zID
@@ -31,13 +37,32 @@ func OTP(otp string) error {
 	return nil
 }
 
-// FIX: improve email validation to require a correct domain
-// e.g. hi@hi should not be a valid email
 // Validates an email
 func Email(email string) error {
-	_, err := mail.ParseAddress(email)
+	addr, err := mail.ParseAddress(email)
 	if err != nil {
-		return errors.New("please enter a valid email address")
+		return emailError
+	}
+
+	parts := strings.SplitN(addr.Address, "@", 2)
+	if len(parts) != 2 || parts[1] == "" {
+		return emailError
+	}
+
+	domain := strings.TrimSpace(parts[1])
+	domain = strings.TrimSuffix(domain, ".")
+
+	fmt.Println(domain)
+
+	u, err := url.Parse("https://" + domain)
+	if err != nil {
+		return emailError
+	}
+	if u.Host == "" {
+		return emailError
+	}
+	if !strings.Contains(u.Host, ".") {
+		return emailError
 	}
 
 	return nil
