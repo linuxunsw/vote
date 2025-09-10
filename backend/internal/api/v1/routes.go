@@ -2,6 +2,7 @@ package v1
 
 import (
 	"log/slog"
+	"net/http"
 
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
@@ -47,9 +48,10 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 	authMiddleware := middleware.CookieAuthenticator(api, config.Load().JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
+	// nomination
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "submit-nomination",
-		Method:      "PUT",
+		Method:      http.MethodPut,
 		Path:        "/nomination",
 		Summary:     "Submit self-nomination",
 		Description: "Creates a self-nomination, replacing an existing one",
@@ -58,7 +60,7 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "get-nomination",
-		Method:      "GET",
+		Method:      http.MethodGet,
 		Path:        "/nomination",
 		Summary:     "Get self-nomination",
 		Description: "Retrieves an existing self-nomination (if any)",
