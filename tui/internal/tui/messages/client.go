@@ -21,13 +21,12 @@ type VerifyOTPResultMsg struct {
 
 // Submission is sent as a message to the root model
 type Submission struct {
-	Name    string
-	Email   string
-	Discord string
-
-	Roles     []string
-	Statement string
-	Url       string
+	Name      string   `json:"candidate_name"`
+	Email     string   `json:"contact_email"`
+	Discord   string   `json:"discord_username"`
+	Roles     []string `json:"executive_roles"`
+	Statement string   `json:"candidate_statement"`
+	Url       string   `json:"url,omitempty"`
 }
 
 type SubmitFormResultMsg struct {

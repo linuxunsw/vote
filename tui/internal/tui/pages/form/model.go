@@ -50,6 +50,7 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.isSubmitted = true
 
 		// TODO: get roles from form
+
 		data := messages.Submission{
 			Name:      m.form.GetString("name"),
 			Email:     m.form.GetString("email"),
@@ -57,6 +58,14 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Statement: m.form.GetString("statement"),
 			Url:       m.form.GetString("url"),
 		}
+
+		formRoles := m.form.Get("roles")
+		roles, ok := formRoles.([]string)
+		if !ok {
+			// FIX: remove
+			m.logger.Debug("what the fuck")
+		}
+		data.Roles = roles
 
 		return m, tea.Batch(
 			messages.SendSubmission(data),

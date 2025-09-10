@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"unicode"
@@ -46,6 +47,7 @@ type rootModel struct {
 
 	current pages.PageID
 
+	client          *http.Client
 	isAuthenticated bool
 
 	loadingSpinner spinner.Model
@@ -86,6 +88,7 @@ func New(user string) tea.Model {
 		log:             logger,
 		keyMap:          keyMap,
 		pages:           pageMap,
+		client:          client.NewClient(),
 		isAuthenticated: false,
 		loaded:          make(map[pages.PageID]bool),
 		loading:         false,
@@ -127,12 +130,13 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.loading = true
 
-		return m, client.RequestOTP(m.data.zID)
+		return m, client.GenerateOTPCmd(m.client, m.data.zID)
 	case messages.RequestOTPResultMsg:
 		m.log.Debug("RequestOTPResultMsg", "error", msg.Error)
 		// only change page if we didn't error
 		m.loading = false
 
+		// TODO: handle errors if request fails
 		if msg.Error == nil {
 			return m, messages.SendPageChange(pages.PageAuthCode)
 		}
@@ -141,15 +145,17 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.loading = true
 
-		return m, client.VerifyOTP(msg.OTP)
+		return m, client.SubmitOTPCmd(m.client, m.data.zID, msg.OTP)
 	case messages.VerifyOTPResultMsg:
 		m.log.Debug("VerifyOTPResultMsg", "error", msg.Error)
 
 		m.loading = false
 
+		// TODO: Handle error (RESET FORM)
 		if msg.Error == nil {
 			m.isAuthenticated = true
 			m.log.Info("User authenticated", "zID", m.data.zID)
+			m.log.Debug("cookiejar", m.client)
 			return m, messages.SendPageChange(pages.PageForm)
 		}
 	case messages.Submission:
@@ -164,14 +170,22 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.data.submission = msg
 
-		return m, client.SubmitForm(msg)
+		return m, client.SubmitNominationCmd(m.client, m.data.submission)
 	case messages.SubmitFormResultMsg:
 		m.log.Debug("SubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
 
 		m.loading = false
 
+		// TODO: refactor
 		if msg.Error == nil {
 			m.log.Info("Form submitted", "zID", m.data.zID)
+			return m, tea.Sequence(
+				messages.SendPageChange(pages.PageSubmit),
+				messages.SendPublicSubmitFormResult(msg.RefCode, msg.Error),
+			)
+		} else {
+			m.log.Debug(msg.Error)
+
 			return m, tea.Sequence(
 				messages.SendPageChange(pages.PageSubmit),
 				messages.SendPublicSubmitFormResult(msg.RefCode, msg.Error),

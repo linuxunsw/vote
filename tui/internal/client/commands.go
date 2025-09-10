@@ -2,6 +2,8 @@
 package client
 
 import (
+	"context"
+	"net/http"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,34 +11,43 @@ import (
 )
 
 // TODO: replace sleeps with api calls
-func RequestOTP(zid string) tea.Cmd {
+func GenerateOTPCmd(client *http.Client, zID string) tea.Cmd {
 	return func() tea.Msg {
-		time.Sleep(time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		err := generateOTP(client, ctx, zID)
 
 		return messages.RequestOTPResultMsg{
-			Error: nil,
+			Error: err,
 		}
 	}
 }
 
-func VerifyOTP(otp string) tea.Cmd {
+func SubmitOTPCmd(client *http.Client, zID string, otp string) tea.Cmd {
 	return func() tea.Msg {
-		time.Sleep(time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		err := submitOTP(client, ctx, zID, otp)
 
 		return messages.VerifyOTPResultMsg{
-			Error: nil,
+			Error: err,
 		}
 	}
 
 }
 
-func SubmitForm(data messages.Submission) tea.Cmd {
+func SubmitNominationCmd(client *http.Client, data messages.Submission) tea.Cmd {
 	return func() tea.Msg {
-		time.Sleep(time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		respID, err := submitNomination(client, ctx, data)
 
 		return messages.SubmitFormResultMsg{
-			Error:   nil,
-			RefCode: "blank",
+			Error:   err,
+			RefCode: respID,
 		}
 	}
 }
