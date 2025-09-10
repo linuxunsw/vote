@@ -13,12 +13,7 @@ import (
 
 func ElectionMemberListSet(log *slog.Logger, st store.ElectionStore) func(ctx context.Context, input *models.ElectionMemberListSetInput) (*models.ElectionMemberListSetResponse, error) {
 	return func(ctx context.Context, input *models.ElectionMemberListSetInput) (*models.ElectionMemberListSetResponse, error) {
-		entries := make([]store.ElectionMemberEntry, len(input.Body.Zids))
-		for i, zid := range input.Body.Zids {
-			entries[i] = store.ElectionMemberEntry{Zid: zid}
-		}
-
-		err := st.SetMembers(ctx, input.ElectionId, entries)
+		err := st.SetMembers(ctx, input.ElectionId, input.Body.Zids)
 		if err != nil {
 			log.Error("failed to set election members", "error", err, "request_id", requestid.Get(ctx))
 			return nil, huma.Error500InternalServerError("internal error")

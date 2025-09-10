@@ -18,7 +18,7 @@ type ElectionMemberListSetInput struct {
 	ElectionId string `path:"election_id" doc:"Election ID"`
 
 	Body struct {
-		Zids []string `json:"zids" doc:"User zIDs"`
+		Zids []string `json:"zids" doc:"User zIDs" example:"z0000000"`
 	}
 }
 

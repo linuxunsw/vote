@@ -32,15 +32,18 @@ var (
 	zIDRegex = regexp.MustCompile(`^z[0-9]{7}$`)
 )
 
-func deduplicateAndVerifyEntries(entries []store.ElectionMemberEntry) (deduplicated []store.ElectionMemberEntry, valid bool) {
+func deduplicateAndVerifyEntries(entries []string, electionId string) (deduplicated []store.ElectionMemberEntry, valid bool) {
 	dedupEntries := make(map[string]store.ElectionMemberEntry)
-	for _, entry := range entries {
-		if !zIDRegex.MatchString(entry.Zid) {
+	for _, zid := range entries {
+		if !zIDRegex.MatchString(zid) {
 			return nil, false
 		}
 		
-		if _, exists := dedupEntries[entry.Zid]; !exists {
-			dedupEntries[entry.Zid] = entry
+		if _, exists := dedupEntries[zid]; !exists {
+			dedupEntries[zid] = store.ElectionMemberEntry{
+				Zid: zid,
+				ElectionID: electionId,
+			}
 		}
 	}
 
@@ -52,7 +55,7 @@ func deduplicateAndVerifyEntries(entries []store.ElectionMemberEntry) (deduplica
 	return dedupEntriesList, true
 }
 
-func (st *pgElectionStore) SetMembers(ctx context.Context, electionId string, entries []store.ElectionMemberEntry) error {
+func (st *pgElectionStore) SetMembers(ctx context.Context, electionId string, entries []string) error {
 	tx, err := st.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -61,7 +64,7 @@ func (st *pgElectionStore) SetMembers(ctx context.Context, electionId string, en
 		_ = tx.Rollback(ctx)
 	}()
 
-	deduplicatedEntries, valid := deduplicateAndVerifyEntries(entries)
+	deduplicatedEntries, valid := deduplicateAndVerifyEntries(entries, electionId)
 	if !valid {
 		return store.ErrElectionSetMembersFailedValidation
 	}

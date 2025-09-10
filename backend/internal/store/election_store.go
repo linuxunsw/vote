@@ -28,9 +28,10 @@ var ErrElectionSetMembersFailedValidation = errors.New("zID failed to validate")
 var ErrElectionCreateAlreadyRunning = errors.New("election is already running")
 
 type ElectionStore interface {
-	// Sets members for the current election. Returns error ErrElectionSetMembersFailedValidation
-	// and aborts if any zid fails to validate.
-	SetMembers(ctx context.Context, electionId string, entries []ElectionMemberEntry) error
+	// Sets members for the current election. This is a string array of zIDs.
+	// Returns error ErrElectionSetMembersFailedValidation and aborts if any zID
+	// fails to validate.
+	SetMembers(ctx context.Context, electionId string, entries []string) error
 
 	// Get data for member by zid in this election. Returns nil with no error if not found.
 	GetMember(ctx context.Context, electionId string, zid string) (*ElectionMemberEntry, error)
