@@ -7,7 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-type NominationRequest struct {
+type SubmitNominationRequest struct {
 	Body struct {
 		CandidateName      string   `json:"candidate_name" minLength:"2" maxLength:"100" example:"John Doe"`
 		ContactEmail       string   `json:"contact_email" format:"email" example:"john@example.com"`
@@ -18,7 +18,7 @@ type NominationRequest struct {
 	}
 }
 
-func (b *NominationRequest) Resolve(ctx huma.Context) []error {
+func (b *SubmitNominationRequest) Resolve(ctx huma.Context) []error {
 	if b.Body.URL == nil {
 		return nil
 	}
@@ -46,9 +46,25 @@ func (b *NominationRequest) Resolve(ctx huma.Context) []error {
 	return nil
 }
 
-type NominationResponse struct {
+type SubmitNominationResponse struct {
 	Body struct {
-		ID int64 `json:"id" example:"1"`
+		ID int64 `json:"id" example:"1" doc:"Nomination ID"`
+	}
+}
+
+type GetNominationResponse struct {
+	Body struct {
+		ID                 int64    `json:"id" example:"1"`
+		ElectionID         string   `json:"election_id" example:"1"`
+		CandidateZID       string   `json:"candidate_zid" example:"z1234567"`
+		CandidateName      string   `json:"candidate_name" example:"John Doe"`
+		ContactEmail       string   `json:"contact_email" example:"john@example.com"`
+		DiscordUsername    string   `json:"discord_username" example:"johndoe"`
+		ExecutiveRoles     []string `json:"executive_roles" example:"[\"president\", \"secretary\"]"`
+		CandidateStatement string   `json:"candidate_statement" example:"I am running for president because..."`
+		URL                *url.URL `json:"url,omitempty" example:"https://johndoe.com"`
+		CreatedAt          string   `json:"created_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
+		UpdatedAt          string   `json:"updated_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
 	}
 }
 

@@ -9,9 +9,16 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
 
-func SubmitNomination(logger *slog.Logger, store store.Store) func(ctx context.Context, input *models.NominationRequest) (*models.NominationResponse, error) {
-	return func(ctx context.Context, input *models.NominationRequest) (*models.NominationResponse, error) {
+func SubmitNomination(logger *slog.Logger, store store.Store) func(ctx context.Context, input *models.SubmitNominationRequest) (*models.SubmitNominationResponse, error) {
+	return func(ctx context.Context, input *models.SubmitNominationRequest) (*models.SubmitNominationResponse, error) {
 		logger.Info("Submit Nomination Info", "request", input)
+		return nil, huma.Error500InternalServerError("stub")
+	}
+}
+
+func GetNomination(logger *slog.Logger, store store.Store) func(ctx context.Context, input *struct{}) (*models.GetNominationResponse, error) {
+	return func(ctx context.Context, input *struct{}) (*models.GetNominationResponse, error) {
+		logger.Info("Get Nomination Info", "request", input)
 		return nil, huma.Error500InternalServerError("stub")
 	}
 }

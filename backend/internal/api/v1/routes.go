@@ -51,10 +51,20 @@ func Register(api huma.API, logger *slog.Logger, store store.Store, mailer maile
 		OperationID: "submit-nomination",
 		Method:      "PUT",
 		Path:        "/nomination",
-		Summary:     "Submit a self-nomination",
+		Summary:     "Submit self-nomination",
+		Description: "Creates a self-nomination, replacing an existing one",
 		Tags:        []string{"Nominations"},
 	}, handlers.SubmitNomination(logger, store))
-	//
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-nomination",
+		Method:      "GET",
+		Path:        "/nomination",
+		Summary:     "Get self-nomination",
+		Description: "Retrieves an existing self-nomination (if any)",
+		Tags:        []string{"Nominations"},
+	}, handlers.GetNomination(logger, store))
+
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
 	// 	Method:      "GET",
