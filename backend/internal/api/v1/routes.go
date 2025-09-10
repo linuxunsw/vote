@@ -27,6 +27,7 @@ type HandlerDependencies struct {
 	// Stores
 	OtpStore store.OTPStore
 	ElectionStore store.ElectionStore
+	NominationStore store.NominationStore
 }
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
@@ -51,7 +52,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Path:        "/otp/submit",
 		Summary:     "Submit an OTP to enter a session",
 		Tags:        []string{"OTP"},
-	}, handlers.SubmitOTP(deps.Logger, deps.OtpStore, deps.ElectionStore, deps.Cfg.JWT))
+	}, handlers.SubmitOTP(deps.Logger, deps.OtpStore, deps.ElectionStore, deps.Cfg.JWT, deps.Cfg.Admin))
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
@@ -84,7 +85,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Summary:     "Submit self-nomination",
 		Description: "Creates a self-nomination for the current election, replacing an existing one.",
 		Tags:        []string{"Nominations"},
-	}, handlers.SubmitNomination(deps.Logger, nil))
+	}, handlers.SubmitNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
 
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "get-nomination",
@@ -93,7 +94,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Summary:     "Get self-nomination",
 		Description: "Retrieves an existing self-nomination (if any) for the current election.",
 		Tags:        []string{"Nominations"},
-	}, handlers.GetNomination(deps.Logger, nil))
+	}, handlers.GetNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
 
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",

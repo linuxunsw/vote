@@ -1,19 +1,27 @@
 package handlers_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/go-chi/httplog/v3"
 	v1 "github.com/linuxunsw/vote/backend/internal/api/v1"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/logger"
 	"github.com/linuxunsw/vote/backend/internal/mailer/mock_mailer"
 	"github.com/linuxunsw/vote/backend/internal/store/pg"
 	"github.com/linuxunsw/vote/backend/internal/store/pg/harness"
+)
+
+const (
+	TestingDummyJWTAdmin = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ6MTIzNDU2NyIsImlzcyI6InZvdGUtYXBpIiwiaXNBZG1pbiI6dHJ1ZX0.pzeRspChlGtMEc3XuVLjDpFriJzdehXqny7L85VxSW0"
 )
 
 func TestMain(m *testing.M) {
@@ -46,6 +54,7 @@ func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
 	// setup stores
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
 	electionStore := pg.NewPgElectionStore(pool)
+	nominationStore := pg.NewPgNominationStore(pool)
 
 	stores := v1.HandlerDependencies{
 		Logger:   logger,
@@ -54,9 +63,78 @@ func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
 		Checker:  nil,
 		OtpStore: otpStore,
 		ElectionStore: electionStore,
+		NominationStore: nominationStore,
 	}
 
 	v1.Register(api, stores)
 
 	return api, mailer.(*mock_mailer.MockMailer)
+}
+
+func createElection(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, memberList []string) string {
+	adminCookie := fmt.Sprintf("Cookie: %s=%s", cfg.CookieName, TestingDummyJWTAdmin)
+
+	// create an election
+	resp := api.Post("/api/v1/elections", adminCookie, map[string]any{
+		"name": "Test Election",
+	})
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
+	}
+
+	electionResp := models.CreateElectionResponseBody{}
+	err := json.Unmarshal(resp.Body.Bytes(), &electionResp)
+	if err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	electionId := electionResp.ElectionId
+
+	// put member list
+	resp = api.Put("/api/v1/elections/"+electionId+"/members", adminCookie, map[string]any{
+		"zids": memberList,
+	})
+
+	// "No Content" with PUT
+	if resp.Code != 204 {
+		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	}
+
+	return electionId
+}
+
+func compareStructs[T any](expected, actual T) error {
+	expectedValue := reflect.ValueOf(expected)
+	actualValue := reflect.ValueOf(actual)
+
+	// Ensure both inputs are structs. The generic type T ensures they are of the same underlying type.
+	if expectedValue.Kind() != reflect.Struct || actualValue.Kind() != reflect.Struct {
+		return fmt.Errorf("CompareStructs: both inputs must be structs, got expected %s and actual %s",
+			expectedValue.Kind(), actualValue.Kind())
+	}
+
+	structType := expectedValue.Type()
+	diffs := []string{}
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		expectedField := expectedValue.Field(i)
+		actualField := actualValue.Field(i)
+
+		// reflect.DeepEqual handles most built-in types, slices, maps, and
+		// nested structs recursively.
+		if !reflect.DeepEqual(expectedField.Interface(), actualField.Interface()) {
+			diffs = append(diffs, fmt.Sprintf("  field '%s': expected %v (type %s), got %v (type %s)",
+				field.Name,
+				expectedField.Interface(), expectedField.Type(),
+				actualField.Interface(), actualField.Type()))
+		}
+	}
+
+	if len(diffs) > 0 {
+		return fmt.Errorf("CompareStructs: structs differ:\nExpected: %+v\nActual:   %+v\nDifferences:\n%s",
+			expected, actual, strings.Join(diffs, "\n"))
+	}
+
+	return nil
 }
