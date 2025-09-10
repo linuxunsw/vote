@@ -8,7 +8,6 @@ import (
 
 type (
 	OTPValidate int
-	Store       any
 )
 
 const (
@@ -26,11 +25,11 @@ type OTPEntry struct {
 	CreatedAt   time.Time `db:"created_at"`
 }
 
-var OTPRateLimitExceeded = errors.New("rate limit exceeded")
+var ErrOTPRateLimitExceeded = errors.New("rate limit exceeded")
 
 type OTPStore interface {
 	// Create or replace OTP entry given zid and code. This will manage ratelimits
-	// and return error OTPRateLimitExceeded if the ratelimit is exceeded.
+	// and return error ErrOTPRateLimitExceeded if the ratelimit is exceeded.
 	CreateOrReplace(ctx context.Context, zid string, code string) (err error)
 
 	// Gets the active OTP entry for a given zid. Returns valid OTPEntry if exists,
@@ -42,4 +41,21 @@ type OTPStore interface {
 
 	// Consumes an OTP code owned by zid unconditionally. Clears ratelimits.
 	ConsumeIfExists(ctx context.Context, zid string) error
+}
+
+func (v OTPValidate) ToString() string {
+	switch v {
+	case OTPValidateSuccess:
+		return "success"
+	case OTPValidateInternalError:
+		return "internal_error"
+	case OTPValidateNotFoundOrExpired:
+		return "not found or expired"
+	case OTPValidateAttemptsExceeded:
+		return "attempts exceeded"
+	case OTPValidateMismatch:
+		return "mismatch"
+	default:
+		return "unknown"
+	}
 }

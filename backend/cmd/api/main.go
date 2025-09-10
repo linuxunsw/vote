@@ -109,12 +109,17 @@ func main() {
 
 	// setup stores
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
+	electionStore := pg.NewPgElectionStore(pool)
 
-	stores := v1.RegisterStores{
+	stores := v1.HandlerDependencies{
+		Logger:   logger,
+		Cfg:      cfg,
+		Mailer:   nil,
+		Checker:  health,
 		OtpStore: otpStore,
+		ElectionStore: electionStore,
 	}
-
-	v1.Register(api, logger, cfg, stores, nil, health)
+	v1.Register(api, stores)
 
 	// cli & env parsing for high level config and commands
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
@@ -182,7 +187,9 @@ func createMigrateCommand(log *slog.Logger, cfg config.Config) *cobra.Command {
 				log.Error("Failed to connect to DB for migration", "error", err)
 				os.Exit(1)
 			}
-			defer db.Close()
+			defer func() {
+				_ = db.Close()
+			}()
 
 			if err := goose.SetDialect("postgres"); err != nil {
 				log.Error("Failed to set Goose dialect", "error", err)

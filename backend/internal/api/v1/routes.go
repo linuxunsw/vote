@@ -16,33 +16,42 @@ import (
 	"github.com/danielgtaylor/huma/v2/sse"
 )
 
-type RegisterStores struct {
+type HandlerDependencies struct {
+	Logger *slog.Logger
+
+	Cfg config.Config
+
+	Mailer mailer.Mailer
+	Checker health.Checker
+
+	// Stores
 	OtpStore store.OTPStore
+	ElectionStore store.ElectionStore
 }
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
-func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores RegisterStores, mailer mailer.Mailer, checker health.Checker) {
+func Register(api huma.API, deps HandlerDependencies) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
-	huma.Get(api, "/health", handlers.GetHealth(checker))
+	huma.Get(api, "/health", handlers.GetHealth(deps.Checker))
 
 	// == Authentication Routes ==
 	huma.Register(v1, huma.Operation{
 		OperationID: "generate-otp",
-		Method:      "POST",
+		Method:      http.MethodPost,
 		Path:        "/otp/generate",
 		Summary:     "Generate an OTP code",
 		Tags:        []string{"OTP"},
-	}, handlers.GenerateOTP(stores.OtpStore, mailer))
+	}, handlers.GenerateOTP(deps.Logger, deps.OtpStore, deps.Mailer))
 
 	huma.Register(v1, huma.Operation{
 		OperationID: "submit-otp",
-		Method:      "POST",
+		Method:      http.MethodPost,
 		Path:        "/otp/submit",
 		Summary:     "Submit an OTP to enter a session",
 		Tags:        []string{"OTP"},
-	}, handlers.SubmitOTP(stores.OtpStore, cfg.JWT))
+	}, handlers.SubmitOTP(deps.Logger, deps.OtpStore, deps.ElectionStore, deps.Cfg.JWT))
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
@@ -51,7 +60,7 @@ func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores Regis
 			{"cookieAuth": {}},
 		}
 	})
-	authMiddleware := middleware.CookieAuthenticator(api, cfg.JWT)
+	authMiddleware := middleware.CookieAuthenticator(api, deps.Cfg.JWT)
 	userRoutes.UseMiddleware(authMiddleware)
 
 	// state updates via SSE
@@ -65,7 +74,7 @@ func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores Regis
 	}, map[string]any{
 		"stateChange": &models.StateChangeEvent{},
 	},
-		handlers.GetState(logger))
+		handlers.GetState(deps.Logger))
 
 	// nomination
 	huma.Register(userRoutes, huma.Operation{
@@ -75,7 +84,7 @@ func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores Regis
 		Summary:     "Submit self-nomination",
 		Description: "Creates a self-nomination for the current election, replacing an existing one.",
 		Tags:        []string{"Nominations"},
-	}, handlers.SubmitNomination(logger, nil))
+	}, handlers.SubmitNomination(deps.Logger, nil))
 
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "get-nomination",
@@ -84,7 +93,7 @@ func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores Regis
 		Summary:     "Get self-nomination",
 		Description: "Retrieves an existing self-nomination (if any) for the current election.",
 		Tags:        []string{"Nominations"},
-	}, handlers.GetNomination(logger, nil))
+	}, handlers.GetNomination(deps.Logger, nil))
 
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
@@ -104,13 +113,29 @@ func Register(api huma.API, logger *slog.Logger, cfg config.Config, stores Regis
 
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.
-	// adminRoutes := huma.NewGroup(userRoutes, "/admin")
-	// adminRoutes.UseMiddleware(middleware.RequireAdmin(api))
-	//
+	adminRoutes := huma.NewGroup(userRoutes)
+	adminRoutes.UseMiddleware(middleware.RequireAdmin(api))
+	
+	huma.Register(adminRoutes, huma.Operation{
+		OperationID: "create-election",
+		Method:      http.MethodPost,
+		Path:        "/elections",
+		Summary:     "Create an election",
+		Tags:        []string{"Elections"},
+	}, handlers.CreateElection(deps.Logger, deps.ElectionStore))
+
+	huma.Register(adminRoutes, huma.Operation{
+		OperationID: "set-election-members",
+		Method:      http.MethodPut,
+		Path:        "/elections/{election_id}/members",
+		Summary:     "Set the member list for an election",
+		Tags:        []string{"Elections"},
+	}, handlers.ElectionMemberListSet(deps.Logger, deps.ElectionStore))
+
 	// huma.Register(adminRoutes, huma.Operation{
 	// 	OperationID: "admin-update-election-state",
 	// 	Method:      "PUT",
-	// 	Path:        "/election/state",
+	// 	Path:        "/elections/state",
 	// 	Summary:     "Update the election state",
 	// 	Tags:        []string{"Admin"},
 	// }, handlers.UpdateElectionState(store))

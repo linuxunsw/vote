@@ -9,6 +9,7 @@ const (
 	StateVotingOpen
 	StateVotingClosed
 	StateResults
+	StateEnd
 )
 
 var stateName = map[ElectionState]string{
@@ -18,6 +19,7 @@ var stateName = map[ElectionState]string{
 	StateVotingOpen:        "VOTING_OPEN",
 	StateVotingClosed:      "VOTING_CLOSED",
 	StateResults:           "RESULTS",
+	StateEnd:               "END",
 }
 
 func (ss ElectionState) String() string {
@@ -25,5 +27,5 @@ func (ss ElectionState) String() string {
 }
 
 type StateChangeEvent struct {
-	NewState string `json:"new_state" enum:"CLOSED,NOMINATIONS_OPEN,NOMINATIONS_CLOSED,VOTING_OPEN,VOTING_CLOSED,RESULTS"`
+	NewState string `json:"new_state" enum:"CLOSED,NOMINATIONS_OPEN,NOMINATIONS_CLOSED,VOTING_OPEN,VOTING_CLOSED,RESULTS,END"`
 }

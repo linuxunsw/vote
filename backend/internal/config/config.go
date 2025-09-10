@@ -48,7 +48,7 @@ type OTPConfig struct {
 	MaxRetry int
 	Duration time.Duration
 
-	RatelimitCount int
+	RatelimitCount  int
 	RatelimitWithin time.Duration
 }
 
@@ -104,10 +104,10 @@ func Load() Config {
 			Issuer:     "vote-api",
 		},
 		OTP: OTPConfig{
-			Secret:   GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
-			MaxRetry: 10,
-			Duration: time.Minute * 10,
-			RatelimitCount: 3,
+			Secret:          GetString("OTP_SECRET", "DONTUSEMEINPRODPLEASE-IMEANIT!"),
+			MaxRetry:        10,
+			Duration:        time.Minute * 10,
+			RatelimitCount:  3,
 			RatelimitWithin: time.Minute * 5,
 		},
 		Mailer: MailerConfig{
