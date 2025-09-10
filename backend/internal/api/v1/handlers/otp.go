@@ -11,6 +11,8 @@ import (
 	"strconv"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware/requestid"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
@@ -66,22 +68,16 @@ func GenerateOTP(log *slog.Logger, st store.OTPStore, mailer mailer.Mailer) func
 			log.Error("failed to send OTP email", "error", err, "request_id", requestid.Get(ctx))
 			return nil, huma.Error500InternalServerError("internal error")
 		}
-		
+
 		// success
 		return &models.GenerateOTPResponse{}, nil
 	}
 }
 
-const (
-	// FIXME TODO REMOVE
-	testingDummyJWTAdmin = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ6MTIzNDU2NyIsImlzcyI6InZvdGUtYXBpIiwiaXNBZG1pbiI6dHJ1ZX0.pzeRspChlGtMEc3XuVLjDpFriJzdehXqny7L85VxSW0"
-)
-
 // Huma submit OTP handler
 func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg config.JWTConfig) func(ctx context.Context, input *models.SubmitOTPInput) (*models.SubmitOTPResponse, error) {
 	return func(ctx context.Context, input *models.SubmitOTPInput) (*models.SubmitOTPResponse, error) {
 		valid, reason, err := st.ValidateAndConsume(ctx, input.Body.Zid, input.Body.Otp)
-
 		if err != nil {
 			log.Error("failed to validate OTP", "error", err, "request_id", requestid.Get(ctx))
 			return nil, huma.Error500InternalServerError("internal error")
@@ -97,7 +93,7 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 			case store.OTPValidateMismatch:
 				clientStr = "invalid code"
 			}
-			
+
 			log.Warn("invalid OTP submission", "zid", input.Body.Zid, "reason", reason.ToString(), "request_id", requestid.Get(ctx))
 			return nil, huma.Error400BadRequest(clientStr)
 		}
@@ -122,14 +118,32 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 			return nil, huma.Error403Forbidden("not authorized to vote")
 		}
 
+		// user is now authenticated and authorised as a society member
+		// create JWT
+		token, err := jwt.NewBuilder().Issuer(cfg.Issuer).Subject(input.Body.Zid).Claim("isAdmin", false).Build()
+		if err != nil {
+			log.Error("failed to build JWT", "error", err, "request_id", requestid.Get(ctx))
+			return nil, huma.Error500InternalServerError("internal error")
+		}
+
+		// sign JWT
+		signed, err := jwt.Sign(token, jwt.WithKey(jwa.HS256(), []byte(cfg.Secret)))
+		if err != nil {
+			log.Error("failed to sign JWT", "error", err, "request_id", requestid.Get(ctx))
+			return nil, huma.Error500InternalServerError("internal error")
+		}
+
+		// serialise into a string
+		stringJWT := string(signed)
+
 		// FIXME TODO implement auth
 		return &models.SubmitOTPResponse{
 			SetCookie: http.Cookie{
-				Name: cfg.CookieName,
-				Value: testingDummyJWTAdmin,
+				Name:     cfg.CookieName,
+				Value:    stringJWT,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode, 
+				SameSite: http.SameSiteLaxMode,
 				Path:     "/",
 			},
 		}, nil

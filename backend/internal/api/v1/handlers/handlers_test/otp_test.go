@@ -9,9 +9,7 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/config"
 )
 
-
 const (
-	// FIXME TODO REMOVE
 	TestingDummyJWTAdmin = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ6MTIzNDU2NyIsImlzcyI6InZvdGUtYXBpIiwiaXNBZG1pbiI6dHJ1ZX0.pzeRspChlGtMEc3XuVLjDpFriJzdehXqny7L85VxSW0"
 )
 
@@ -39,7 +37,7 @@ func TestOTPConsumeOnce(t *testing.T) {
 	zid := "z0000000"
 
 	// put member list
-	resp = api.Put("/api/v1/elections/" + electionResp.ElectionId + "/members", adminCookie, map[string]any{
+	resp = api.Put("/api/v1/elections/"+electionResp.ElectionId+"/members", adminCookie, map[string]any{
 		"zids": []string{zid},
 	})
 
