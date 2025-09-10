@@ -22,6 +22,7 @@ type Election struct {
 	VotingOpenAt       *time.Time `db:"voting_open_at"`
 	VotingCloseAt      *time.Time `db:"voting_close_at"`
 	ResultsPublishedAt *time.Time `db:"results_published_at"`
+	EndedAt            *time.Time `db:"ended_at"`
 }
 
 var ErrElectionSetMembersFailedValidation = errors.New("zID failed to validate")

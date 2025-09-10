@@ -13,7 +13,8 @@ create type "election_status" as enum (
     'NOMINATION_CLOSED',
     'VOTING_OPEN',
     'VOTING_CLOSED',
-    'RESULTS'
+    'RESULTS',
+    'END'
 );
 
 create table "elections" (
@@ -30,7 +31,8 @@ create table "elections" (
     "voting_open_at" timestamptz,
     "voting_close_at" timestamptz,
 
-    "results_published_at" timestamptz
+    "results_published_at" timestamptz,
+    "ended_at" timestamptz
 );
 
 create index "elections_created_at_idx" on "elections" ("created_at");

@@ -191,7 +191,7 @@ func (st *pgElectionStore) CurrentElection(ctx context.Context) (*store.Election
 		return nil, err
 	}
 
-	if election.State == "RESULTS" {
+	if election.State == "END" {
 		// all elections are finalised, no current election
 		return nil, nil
 	}
