@@ -13,7 +13,7 @@ func Nomination() *huh.Form {
 			huh.NewInput().
 				Key("name").
 				Title("full name").
-				Validate(validation.NotEmpty),
+				Validate(huh.ValidateLength(2, 100)),
 			huh.NewInput().
 				Key("email").
 				Title("preferred contact email").
@@ -40,7 +40,8 @@ func Nomination() *huh.Form {
 				Validate(huh.ValidateLength(50, 2000)),
 			huh.NewInput().
 				Key("url").
-				Title("url (optional)"),
+				Title("url (optional)").
+				Validate(validation.URL),
 		),
 	).WithTheme(styles.FormTheme())
 }

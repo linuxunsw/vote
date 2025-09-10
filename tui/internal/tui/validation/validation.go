@@ -3,6 +3,7 @@ package validation
 import (
 	"errors"
 	"net/mail"
+	"net/url"
 	"regexp"
 )
 
@@ -30,6 +31,8 @@ func OTP(otp string) error {
 	return nil
 }
 
+// FIX: improve email validation to require a correct domain
+// e.g. hi@hi should not be a valid email
 // Validates an email
 func Email(email string) error {
 	_, err := mail.ParseAddress(email)
@@ -45,6 +48,21 @@ func Email(email string) error {
 func Role(roles []string) error {
 	if len(roles) == 0 {
 		return errors.New("please select a role")
+	}
+
+	return nil
+}
+
+// Validates URL
+// Ensures that if a URL is provided, it will be a valid url
+func URL(formURL string) error {
+	if formURL == "" {
+		return nil
+	}
+
+	parsed, err := url.Parse(formURL)
+	if err != nil || !parsed.IsAbs() {
+		return errors.New("please enter a valid URL")
 	}
 
 	return nil
