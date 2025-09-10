@@ -8,7 +8,6 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
 
-
 func TestNominationSubmit(t *testing.T) {
 	cfg := config.Load()
 	api, mailer := NewAPI(t)
