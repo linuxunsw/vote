@@ -13,7 +13,7 @@ func TestNominationSubmit(t *testing.T) {
 	api, mailer := NewAPI(t)
 
 	zid := "z0000000"
-	electionId := createElection(t, api, cfg.JWT, []string{
+	electionId := createElection(t, api, cfg.JWT, TestingDummyJWTAdmin, []string{
 		zid,
 	})
 

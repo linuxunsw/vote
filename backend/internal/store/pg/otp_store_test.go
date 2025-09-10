@@ -5,7 +5,7 @@ import (
 
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/store"
-	"github.com/linuxunsw/vote/backend/internal/tests/harness"
+	"github.com/linuxunsw/vote/backend/internal/store/pg/harness"
 )
 
 func TestOTPConsumeOnce(t *testing.T) {

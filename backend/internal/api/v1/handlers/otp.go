@@ -107,27 +107,32 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 			return nil, huma.Error400BadRequest(clientStr)
 		}
 
-		currentElection, err := el.CurrentElection(ctx)
-		if err != nil {
-			log.Error("failed to get current election", "error", err, "request_id", requestid.Get(ctx))
-			return nil, huma.Error500InternalServerError("internal error")
-		}
-		if currentElection == nil {
-			log.Warn("no current election when submitting OTP", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
-			return nil, huma.Error400BadRequest("no election is currently running")
-		}
-
-		entry, err := el.GetMember(ctx, currentElection.ElectionID, input.Body.Zid)
-		if err != nil {
-			log.Error("failed to get election member", "error", err, "request_id", requestid.Get(ctx))
-			return nil, huma.Error500InternalServerError("internal error")
-		}
-		if entry == nil {
-			log.Warn("zid not in election member list", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
-			return nil, huma.Error403Forbidden("not authorized to vote")
-		}
-
 		isAdmin := isAdminConfig(adminCfg, input.Body.Zid)
+
+		if !isAdmin {
+			// admins need not be members, but even if we don't include this, you wouldn't be able to create elections
+			currentElection, err := el.CurrentElection(ctx)
+			if err != nil {
+				log.Error("failed to get current election", "error", err, "request_id", requestid.Get(ctx))
+				return nil, huma.Error500InternalServerError("internal error")
+			}
+			if currentElection == nil {
+				log.Warn("no current election when submitting OTP", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
+				return nil, huma.Error400BadRequest("no election is currently running")
+			}
+			
+			entry, err := el.GetMember(ctx, currentElection.ElectionID, input.Body.Zid)
+			if err != nil {
+				log.Error("failed to get election member", "error", err, "request_id", requestid.Get(ctx))
+				return nil, huma.Error500InternalServerError("internal error")
+			}
+			if entry == nil {
+				log.Warn("zid not in election member list", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
+				return nil, huma.Error403Forbidden("not authorized to vote")
+			}
+		} else {
+			log.Info("admin login", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
+		}
 
 		// user is now authenticated and authorised as a society member
 		// create JWT

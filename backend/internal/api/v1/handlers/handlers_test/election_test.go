@@ -13,7 +13,7 @@ func TestElectionCreateFailure(t *testing.T) {
 
 	zid := "z0000000"
 
-	_ = createElection(t, api, cfg.JWT, []string{
+	_ = createElection(t, api, cfg.JWT, TestingDummyJWTAdmin, []string{
 		zid,
 	})
 

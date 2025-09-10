@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -73,8 +74,8 @@ func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
 	return api, mailer.(*mock_mailer.MockMailer)
 }
 
-func createElection(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, memberList []string) string {
-	adminCookie := fmt.Sprintf("Cookie: %s=%s", cfg.CookieName, TestingDummyJWTAdmin)
+func createElection(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, jwt string, memberList []string) string {
+	adminCookie := fmt.Sprintf("Cookie: %s=%s", cfg.CookieName, jwt)
 
 	// create an election
 	resp := api.Post("/api/v1/elections", adminCookie, map[string]any{
@@ -107,10 +108,21 @@ func createElection(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, me
 
 // Assumes there will be one cookie sent back, the JWT cookie.
 func extractCookieHeader(headers http.Header) string {
+	return "Cookie: " + "SESSION=" + extractJWT(headers)
+}
+
+func extractJWT(headers http.Header) string {
 	sc := headers.Get("Set-Cookie")
 	parts := strings.Split(sc, ";")
 	kv := strings.TrimSpace(parts[0]) // "SESSION=abc123"
-	return "Cookie: " + kv
+
+	// remove = from the left
+
+	kvParts := strings.SplitN(kv, "=", 2)
+	if len(kvParts) != 2 {
+		log.Fatalf("invalid cookie format: %s", kv)
+	}
+	return kvParts[1]
 }
 
 func generateOTPSubmit(t *testing.T, api humatest.TestAPI, mailer *mock_mailer.MockMailer, zid string) *httptest.ResponseRecorder {
