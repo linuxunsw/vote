@@ -6,11 +6,14 @@ import (
 
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
+	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/sse"
 )
 
 type HandlerDependencies struct {
@@ -52,20 +55,46 @@ func Register(api huma.API, deps HandlerDependencies) {
 
 	// This group requires a valid JWT for all its routes.
 	userRoutes := huma.NewGroup(v1)
+	userRoutes.UseSimpleModifier(func(op *huma.Operation) {
+		op.Security = []map[string][]string{
+			{"cookieAuth": {}},
+		}
+	})
+	authMiddleware := middleware.CookieAuthenticator(api, deps.Cfg.JWT)
+	userRoutes.UseMiddleware(authMiddleware)
 
-	// TODO THIS IGNORES AUTH AT THE MOMENT. Please fix
+	// state updates via SSE
+	sse.Register(userRoutes, huma.Operation{
+		OperationID: "state",
+		Method:      http.MethodGet,
+		Path:        "/state",
+		Summary:     "Get State (SSE)",
+		Description: "Gets current election state changes as server sent events.",
+		Tags:        []string{"State"},
+	}, map[string]any{
+		"stateChange": &models.StateChangeEvent{},
+	},
+		handlers.GetState(deps.Logger))
 
-	/* authMiddleware := middleware.Authenticator(api, deps.Cfg.JWT)
-	userRoutes.UseMiddleware(authMiddleware) */
+	// nomination
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "submit-nomination",
+		Method:      http.MethodPut,
+		Path:        "/nomination",
+		Summary:     "Submit self-nomination",
+		Description: "Creates a self-nomination for the current election, replacing an existing one.",
+		Tags:        []string{"Nominations"},
+	}, handlers.SubmitNomination(deps.Logger, nil))
 
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "submit-nomination",
-	// 	Method:      "POST",
-	// 	Path:        "/nominations",
-	// 	Summary:     "Submit a self-nomination",
-	// 	Tags:        []string{"Nominations"},
-	// }, handlers.SubmitNomination(store))
-	//
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-nomination",
+		Method:      http.MethodGet,
+		Path:        "/nomination",
+		Summary:     "Get self-nomination",
+		Description: "Retrieves an existing self-nomination (if any) for the current election.",
+		Tags:        []string{"Nominations"},
+	}, handlers.GetNomination(deps.Logger, nil))
+
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
 	// 	Method:      "GET",
@@ -85,7 +114,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.
 	adminRoutes := huma.NewGroup(userRoutes, "/admin")
-	/* adminRoutes.UseMiddleware(middleware.RequireAdmin(api)) */
+	adminRoutes.UseMiddleware(middleware.RequireAdmin(api))
 	
 	huma.Register(adminRoutes, huma.Operation{
 		OperationID: "create-election",

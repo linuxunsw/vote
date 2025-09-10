@@ -71,7 +71,15 @@ func main() {
 
 	// init api
 	router := http.NewServeMux()
-	api := humago.New(router, huma.DefaultConfig("Vote API", cfg.API.Version))
+	humaCfg := huma.DefaultConfig("Vote API", cfg.API.Version)
+	humaCfg.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		"cookieAuth": {
+			Type: "apiKey",
+			In:   "cookie",
+			Name: cfg.JWT.CookieName,
+		},
+	}
+	api := humago.New(router, humaCfg)
 
 	// init crossorigin
 	crossOrigin := http.NewCrossOriginProtection()
@@ -93,7 +101,6 @@ func main() {
 		RateLimitCfg:    cfg.Server.RateLimit,
 		RealIPAllowlist: cfg.Server.RealIPAllowlist,
 	}
-	logger.Info("ALLOWLIST REAL IP", "ips", cfg.Server.RealIPAllowlist)
 	err = middleware.AddGlobalMiddleware(api, opts)
 	if err != nil {
 		logger.Error("Unable to add global middleware", "error", err)
@@ -180,7 +187,9 @@ func createMigrateCommand(log *slog.Logger, cfg config.Config) *cobra.Command {
 				log.Error("Failed to connect to DB for migration", "error", err)
 				os.Exit(1)
 			}
-			defer db.Close()
+			defer func() {
+				_ = db.Close()
+			}()
 
 			if err := goose.SetDialect("postgres"); err != nil {
 				log.Error("Failed to set Goose dialect", "error", err)
