@@ -48,13 +48,13 @@ func (b *SubmitNominationRequest) Resolve(ctx huma.Context) []error {
 
 type SubmitNominationResponse struct {
 	Body struct {
-		ID int64 `json:"id" example:"1" doc:"Nomination ID"`
+		ID string `json:"id" example:"1" doc:"Nomination ID"`
 	}
 }
 
 type GetNominationResponse struct {
 	Body struct {
-		ID                 int64    `json:"id" example:"1"`
+		ID                 string   `json:"id" example:"1"`
 		ElectionID         string   `json:"election_id" example:"1"`
 		CandidateZID       string   `json:"candidate_zid" example:"z1234567"`
 		CandidateName      string   `json:"candidate_name" example:"John Doe"`
@@ -70,7 +70,7 @@ type GetNominationResponse struct {
 
 type PublicNominationResponse struct {
 	Body struct {
-		ID                 int64    `json:"id" example:"1"`
+		ID                 string   `json:"id" example:"1"`
 		CandidateName      string   `json:"candidate_name" example:"John Doe"`
 		DiscordUsername    string   `json:"discord_username,omitempty" example:"johndoe"`
 		ExecutiveRoles     []string `json:"executive_roles" example:"[\"president\", \"secretary\"]"`
