@@ -37,6 +37,7 @@ func Nomination() *huh.Form {
 			huh.NewText().
 				Key("statement").
 				Title("please provide a candidate statement").
+				ExternalEditor(false).
 				Validate(huh.ValidateLength(50, 2000)),
 			huh.NewInput().
 				Key("url").
