@@ -6,7 +6,7 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/config"
 )
 
-func TestOTPConsumeOnce(t *testing.T) {
+func TestOTPConsumeMember(t *testing.T) {
 	cfg := config.Load()
 	api, mailer := NewAPI(t)
 
@@ -15,20 +15,7 @@ func TestOTPConsumeOnce(t *testing.T) {
 		zid,
 	})
 
-	resp := api.Post("/api/v1/otp/generate", map[string]any{
-		"zid": zid,
-	})
-	// generate returns nothing, it goes to the mailer
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
-	}
-
-	code := mailer.MockRetrieveOTP(zid + "@unsw.edu.au")
-
-	resp = api.Post("/api/v1/otp/submit", map[string]any{
-		"zid": zid,
-		"otp": code,
-	})
+	resp := generateOTPSubmit(t, api, mailer, zid)
 	if resp.Code != 204 {
 		t.Fatalf("expected 204 OK, got %d", resp.Code)
 	}
@@ -36,5 +23,18 @@ func TestOTPConsumeOnce(t *testing.T) {
 	res := resp.Result()
 	if res.Header.Get("Set-Cookie") == "" {
 		t.Fatalf("expected Set-Cookie header, got none")
+	}
+}
+
+func TestOTPConsumeNonMember(t *testing.T) {
+	cfg := config.Load()
+	api, mailer := NewAPI(t)
+
+	_ = createElection(t, api, cfg.JWT, []string{})
+
+	zid := "z0000000"
+	resp := generateOTPSubmit(t, api, mailer, zid)
+	if resp.Code != 403 {
+		t.Fatalf("expected 403 Forbidden, got %d", resp.Code)
 	}
 }

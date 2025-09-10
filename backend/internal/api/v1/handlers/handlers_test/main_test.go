@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"strings"
@@ -101,6 +103,31 @@ func createElection(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, me
 	}
 
 	return electionId
+}
+
+// Assumes there will be one cookie sent back, the JWT cookie.
+func extractCookieHeader(headers http.Header) string {
+	sc := headers.Get("Set-Cookie")
+	parts := strings.Split(sc, ";")
+	kv := strings.TrimSpace(parts[0]) // "SESSION=abc123"
+	return "Cookie: " + kv
+}
+
+func generateOTPSubmit(t *testing.T, api humatest.TestAPI, mailer *mock_mailer.MockMailer, zid string) *httptest.ResponseRecorder {
+	resp := api.Post("/api/v1/otp/generate", map[string]any{
+		"zid": zid,
+	})
+	// generate returns nothing, it goes to the mailer
+	if resp.Code != 204 {
+		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	}
+
+	code := mailer.MockRetrieveOTP(zid + "@unsw.edu.au")
+
+	return api.Post("/api/v1/otp/submit", map[string]any{
+		"zid": zid,
+		"otp": code,
+	})
 }
 
 func compareStructs[T any](expected, actual T) error {
