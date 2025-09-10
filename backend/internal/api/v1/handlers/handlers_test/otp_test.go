@@ -23,7 +23,7 @@ func TestOTPConsumeOnce(t *testing.T) {
 	adminCookie := fmt.Sprintf("Cookie: %s=%s", cfg.JWT.CookieName, TestingDummyJWTAdmin)
 
 	// create an election
-	resp := api.Post("/api/v1/admin/election", adminCookie, map[string]any{
+	resp := api.Post("/api/v1/election", adminCookie, map[string]any{
 		"name": "Test Election",
 	})
 	if resp.Code != 200 {
@@ -39,7 +39,7 @@ func TestOTPConsumeOnce(t *testing.T) {
 	zid := "z0000000"
 
 	// put member list
-	resp = api.Put("/api/v1/admin/election/" + electionResp.ElectionId + "/members", adminCookie, map[string]any{
+	resp = api.Put("/api/v1/election/" + electionResp.ElectionId + "/members", adminCookie, map[string]any{
 		"zids": []string{zid},
 	})
 

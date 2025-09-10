@@ -113,7 +113,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.
-	adminRoutes := huma.NewGroup(userRoutes, "/admin")
+	adminRoutes := huma.NewGroup(userRoutes)
 	adminRoutes.UseMiddleware(middleware.RequireAdmin(api))
 	
 	huma.Register(adminRoutes, huma.Operation{
