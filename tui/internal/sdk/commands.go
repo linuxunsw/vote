@@ -19,6 +19,8 @@ import (
 // probably a better way to do this </3
 var noop RequestEditorFn = func(ctx context.Context, req *http.Request) error { return nil }
 
+// Sends request to generate OTP, sends response back to root model as
+// ServerErrMsg or a success message
 func GenerateOTPCmd(c *ClientWithResponses, zID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -57,6 +59,8 @@ func GenerateOTPCmd(c *ClientWithResponses, zID string) tea.Cmd {
 	}
 }
 
+// Sends request to submit OTP, sends response back to root model as
+// ServerErrMsg or a success message
 func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -80,8 +84,9 @@ func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
 			return messages.ServerErrMsg{
-				RespID: respID,
-				Error:  err,
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      err,
 			}
 		}
 
@@ -91,6 +96,8 @@ func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
 
 }
 
+// Sends request to submit a nomination, sends response back to root model as
+// ServerErrMsg or a success message
 func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -109,6 +116,7 @@ func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.C
 			ExecutiveRoles:     &execRoles,
 		}
 
+		// Prevents submitting an empty url (messes with server validation)
 		if data.Url != "" {
 			body.Url = &data.Url
 		}
@@ -121,13 +129,15 @@ func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.C
 			}
 		}
 
+		// Add request ID as a reference code
 		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
 		if resp.StatusCode() != http.StatusNoContent {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
 			return messages.ServerErrMsg{
-				RespID: respID,
-				Error:  err,
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      err,
 			}
 		}
 

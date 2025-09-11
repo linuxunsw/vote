@@ -63,20 +63,9 @@ type rootModel struct {
 func New(user string) tea.Model {
 	keyMap := keys.DefaultKeyMap()
 
-	// Create logger
-	logger := log.New(os.Stderr)
-	logger.SetReportTimestamp(true)
-	prefix := fmt.Sprintf("app (%s)", user)
-	logger.SetPrefix(prefix)
-
-	// Only debug logs if debug set in config
-	logDebug := viper.GetBool("tui.debug")
-	if logDebug {
-		logger.SetLevel(log.DebugLevel)
-	}
+	logger := createLogger(user)
 
 	// Load each page
-	// TODO: add submission result page
 	pageMap := map[pages.PageID]tea.Model{
 		pages.PageAuth:     auth.New(logger),
 		pages.PageAuthCode: authcode.New(logger),
@@ -88,15 +77,7 @@ func New(user string) tea.Model {
 	loadingSpinner := spinner.New()
 	loadingSpinner.Spinner = spinner.Ellipsis
 
-	jar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: jar,
-	}
-	serverAddr := viper.GetString("tui.server")
-	client, err := sdk.NewClientWithResponses(serverAddr, sdk.WithHTTPClient(httpClient))
-	if err != nil {
-		logger.Fatal("Failed to create client", "err", err)
-	}
+	client := createClient(logger)
 
 	model := &rootModel{
 		log:             logger,
@@ -183,6 +164,9 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			messages.SendPublicSubmitFormResult(msg.RefCode, nil),
 		)
 	case messages.ServerErrMsg:
+		// INFO: we must handle the ServerErrMsg here as well as in the current
+		// model as failing to disable loading will prevent the current page
+		// from displaying (thus not displaying the error)
 		m.loading = false
 		m.error = msg.Error
 		m.needsSizeUpdate = true
@@ -331,4 +315,34 @@ func (m *rootModel) movePage(pageID pages.PageID) tea.Cmd {
 	cmds = append(cmds, cmd)
 
 	return tea.Sequence(cmds...)
+}
+
+func createLogger(user string) *log.Logger {
+	// Create logger
+	logger := log.New(os.Stderr)
+	logger.SetReportTimestamp(true)
+	prefix := fmt.Sprintf("app (%s)", user)
+	logger.SetPrefix(prefix)
+
+	// Only debug logs if debug set in config
+	logDebug := viper.GetBool("tui.debug")
+	if logDebug {
+		logger.SetLevel(log.DebugLevel)
+	}
+
+	return logger
+}
+
+func createClient(logger *log.Logger) *sdk.ClientWithResponses {
+	jar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: jar,
+	}
+	serverAddr := viper.GetString("tui.server")
+	client, err := sdk.NewClientWithResponses(serverAddr, sdk.WithHTTPClient(httpClient))
+	if err != nil {
+		logger.Fatal("Failed to create client", "err", err)
+	}
+
+	return client
 }

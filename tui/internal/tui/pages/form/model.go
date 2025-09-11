@@ -48,8 +48,6 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.form.State == huh.StateCompleted && !m.isSubmitted {
 		m.isSubmitted = true
 
-		// TODO: get roles from form
-
 		data := messages.Submission{
 			Name:      m.form.GetString("name"),
 			Email:     m.form.GetString("email"),
@@ -76,7 +74,7 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
 	case messages.ServerErrMsg:
-		// TODO: separate validation errors from other errors
+		// TODO: separate AUTHORISATION ERRORS from other errors
 		return m, tea.Sequence(
 			messages.SendPageChange(pages.PageSubmit),
 			messages.SendPublicSubmitFormResult(msg.RespID, msg.Error),

@@ -2,7 +2,6 @@ package validation
 
 import (
 	"errors"
-	"fmt"
 	"net/mail"
 	"net/url"
 	"regexp"
@@ -54,10 +53,9 @@ func Email(email string) error {
 		return errEmail
 	}
 
+	// Check that the email domain is valid
 	domain := strings.TrimSpace(parts[1])
 	domain = strings.TrimSuffix(domain, ".")
-
-	fmt.Println(domain)
 
 	u, err := url.Parse("https://" + domain)
 	if err != nil {
