@@ -3,6 +3,7 @@ package root
 import (
 	"fmt"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"strings"
 	"unicode"
@@ -14,7 +15,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/spf13/viper"
 
-	"github.com/linuxunsw/vote/tui/internal/client"
+	"github.com/linuxunsw/vote/tui/internal/sdk"
 	"github.com/linuxunsw/vote/tui/internal/tui/components"
 	"github.com/linuxunsw/vote/tui/internal/tui/keys"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
@@ -47,11 +48,14 @@ type rootModel struct {
 
 	current pages.PageID
 
-	client          *http.Client
+	client          *sdk.ClientWithResponses
 	isAuthenticated bool
+	error           error
 
 	loadingSpinner spinner.Model
 	loading        bool
+
+	needsSizeUpdate bool
 
 	data formData
 }
@@ -84,11 +88,21 @@ func New(user string) tea.Model {
 	loadingSpinner := spinner.New()
 	loadingSpinner.Spinner = spinner.Ellipsis
 
+	jar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: jar,
+	}
+	serverAddr := viper.GetString("tui.server")
+	client, err := sdk.NewClientWithResponses(serverAddr, sdk.WithHTTPClient(httpClient))
+	if err != nil {
+		logger.Fatal("Failed to create client", "err", err)
+	}
+
 	model := &rootModel{
 		log:             logger,
 		keyMap:          keyMap,
 		pages:           pageMap,
-		client:          client.NewClient(),
+		client:          client,
 		isAuthenticated: false,
 		loaded:          make(map[pages.PageID]bool),
 		loading:         false,
@@ -124,40 +138,21 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case messages.PageChangeMsg:
 		m.log.Debug("PageChangeMsg", "msg", msg)
 		return m, m.movePage(msg.ID)
-	case messages.RequestOTPMsg:
-		m.log.Debug("RequestOTPMsg", "zID", msg.ZID)
+	case messages.GenerateOTPMsg:
+		m.log.Debug("GenerateOTPMsg", "zID", msg.ZID)
+
 		m.data.zID = msg.ZID
+		m.loading = true
+		m.error = nil
+
+		return m, sdk.GenerateOTPCmd(m.client, m.data.zID)
+	case messages.SubmitOTPMsg:
+		m.log.Debug("SubmitOTPMsg", "OTP", msg.OTP)
 
 		m.loading = true
+		m.error = nil
 
-		return m, client.GenerateOTPCmd(m.client, m.data.zID)
-	case messages.RequestOTPResultMsg:
-		m.log.Debug("RequestOTPResultMsg", "error", msg.Error)
-		// only change page if we didn't error
-		m.loading = false
-
-		// TODO: handle errors if request fails
-		if msg.Error == nil {
-			return m, messages.SendPageChange(pages.PageAuthCode)
-		}
-	case messages.VerifyOTPMsg:
-		m.log.Debug("VerifyOTPMsg", "OTP", msg.OTP)
-
-		m.loading = true
-
-		return m, client.SubmitOTPCmd(m.client, m.data.zID, msg.OTP)
-	case messages.VerifyOTPResultMsg:
-		m.log.Debug("VerifyOTPResultMsg", "error", msg.Error)
-
-		m.loading = false
-
-		// TODO: Handle error (RESET FORM)
-		if msg.Error == nil {
-			m.isAuthenticated = true
-			m.log.Info("User authenticated", "zID", m.data.zID)
-			m.log.Debug("cookiejar", m.client)
-			return m, messages.SendPageChange(pages.PageForm)
-		}
+		return m, sdk.SubmitOTPCmd(m.client, m.data.zID, msg.OTP)
 	case messages.Submission:
 		m.log.Debug(
 			"Submission",
@@ -167,30 +162,30 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 		m.loading = true
+		m.error = nil
 
 		m.data.submission = msg
 
-		return m, client.SubmitNominationCmd(m.client, m.data.submission)
-	case messages.SubmitFormResultMsg:
-		m.log.Debug("SubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
-
+		return m, sdk.SubmitNominationCmd(m.client, m.data.submission)
+	case messages.GenerateOTPSuccessMsg:
+		m.log.Debug("GenerateOTPSuccessMsg")
 		m.loading = false
-
-		// TODO: refactor
-		if msg.Error == nil {
-			m.log.Info("Form submitted", "zID", m.data.zID)
-			return m, tea.Sequence(
-				messages.SendPageChange(pages.PageSubmit),
-				messages.SendPublicSubmitFormResult(msg.RefCode, msg.Error),
-			)
-		} else {
-			m.log.Debug(msg.Error)
-
-			return m, tea.Sequence(
-				messages.SendPageChange(pages.PageSubmit),
-				messages.SendPublicSubmitFormResult(msg.RefCode, msg.Error),
-			)
-		}
+		return m, messages.SendPageChange(pages.PageAuthCode)
+	case messages.SubmitOTPSuccessMsg:
+		m.log.Debug("SubmitOTPSuccessMsg")
+		m.loading = false
+		return m, messages.SendPageChange(pages.PageForm)
+	case messages.SubmitNominationSuccessMsg:
+		m.log.Debug("SubmitNominationSuccessMsg", "refCode", msg.RefCode)
+		m.loading = false
+		return m, tea.Sequence(
+			messages.SendPageChange(pages.PageSubmit),
+			messages.SendPublicSubmitFormResult(msg.RefCode, nil),
+		)
+	case messages.ServerErrMsg:
+		m.loading = false
+		m.error = msg.Error
+		m.needsSizeUpdate = true
 	case spinner.TickMsg:
 		m.loadingSpinner, cmd = m.loadingSpinner.Update(msg)
 		return m, cmd
@@ -200,6 +195,16 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	updated, cmd := m.pages[m.current].Update(msg)
 	m.pages[m.current] = updated
 
+	// INFO: this allows us to trigger a content size change to account
+	// for the error message being included in the footer while allowing
+	// the individual page model and the root model to both handle
+	// a ServerErrMsg
+	if m.needsSizeUpdate {
+		m.needsSizeUpdate = false
+		w, h := m.findContentSize()
+		cmds = append(cmds, messages.SendPageContentSize(w, h))
+	}
+
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
@@ -207,8 +212,11 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // Displays the header, current model's content and a footer if the user is authenticated
 func (m *rootModel) View() string {
 	var footer string
+	if m.error != nil {
+		footer = components.ShowErrorFooter(m.error, m.wWidth)
+	}
 	if m.isAuthenticated {
-		footer = components.ShowFooter(m.data.zID, m.wWidth)
+		footer += components.ShowFooter(m.data.zID, m.wWidth)
 	}
 
 	var content string
@@ -286,8 +294,11 @@ func (m *rootModel) findContentSize() (w int, h int) {
 	// If the user is authenticated, the footer is shown, so we should include it
 	// in the height calculation only when the user is authenticated
 	footerHeight := 0
+	if m.error != nil {
+		footerHeight += lipgloss.Height(components.ShowErrorFooter(m.error, m.wWidth))
+	}
 	if m.isAuthenticated {
-		footerHeight = lipgloss.Height(components.ShowFooter(m.data.zID, m.wWidth))
+		footerHeight += lipgloss.Height(components.ShowFooter(m.data.zID, m.wWidth))
 	}
 
 	headerHeight := lipgloss.Height(components.ShowHeader(m.wWidth))
