@@ -56,10 +56,10 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.isSubmitted = true
 
-		return m, messages.SendRequestOTP(zID)
+		return m, messages.SendGenerateOTP(zID)
 	}
 
-	// Handle remaining bubble tea commands
+	// Handle remaining commands
 	switch msg := msg.(type) {
 	case messages.PageContentSizeMsg:
 		m.cHeight = msg.Height
@@ -70,7 +70,11 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		formWidth := lipgloss.Width(m.form.View())
 		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
 		return m, nil
-
+	case messages.ServerErrMsg:
+		m.isSubmitted = false
+		m.form = forms.ZID().WithHeight(m.cHeight).WithWidth(m.cWidth)
+		m.form.Init()
+		return m, nil
 	}
 
 	return m, tea.Batch(cmds...)

@@ -10,7 +10,12 @@ import (
 )
 
 var (
-	emailError = errors.New("please enter a valid email address")
+	errEmail    = errors.New("please enter a valid email address")
+	errOTP      = errors.New("please enter a valid verification code")
+	errZID      = errors.New("please enter a valid zID")
+	errRoles    = errors.New("please select a role")
+	errURL      = errors.New("please enter a valid url (including the https://, etc.)")
+	errNonEmpty = errors.New("this field cannot be empty")
 )
 
 // Validates a zID
@@ -19,7 +24,7 @@ func ZID(zID string) error {
 	var re = regexp.MustCompile("(?m)^z[0-9]{7}$")
 
 	if !re.MatchString(zID) {
-		return errors.New("please enter a valid zID")
+		return errZID
 	}
 
 	return nil
@@ -31,7 +36,7 @@ func OTP(otp string) error {
 	var re = regexp.MustCompile("(?m)^[0-9]{6}$")
 
 	if !re.MatchString(otp) {
-		return errors.New("please enter a valid verification code")
+		return errOTP
 	}
 
 	return nil
@@ -41,12 +46,12 @@ func OTP(otp string) error {
 func Email(email string) error {
 	addr, err := mail.ParseAddress(email)
 	if err != nil {
-		return emailError
+		return errEmail
 	}
 
 	parts := strings.SplitN(addr.Address, "@", 2)
 	if len(parts) != 2 || parts[1] == "" {
-		return emailError
+		return errEmail
 	}
 
 	domain := strings.TrimSpace(parts[1])
@@ -56,13 +61,13 @@ func Email(email string) error {
 
 	u, err := url.Parse("https://" + domain)
 	if err != nil {
-		return emailError
+		return errEmail
 	}
 	if u.Host == "" {
-		return emailError
+		return errEmail
 	}
 	if !strings.Contains(u.Host, ".") {
-		return emailError
+		return errEmail
 	}
 
 	return nil
@@ -72,7 +77,7 @@ func Email(email string) error {
 // Ensures the user must nominate for at least one role
 func Role(roles []string) error {
 	if len(roles) == 0 {
-		return errors.New("please select a role")
+		return errRoles
 	}
 
 	return nil
@@ -87,7 +92,7 @@ func URL(formURL string) error {
 
 	parsed, err := url.Parse(formURL)
 	if err != nil || !parsed.IsAbs() {
-		return errors.New("please enter a valid URL")
+		return errURL
 	}
 
 	return nil
@@ -97,7 +102,7 @@ func URL(formURL string) error {
 // Makes the field mandatory - 'cannot be empty'
 func NotEmpty(s string) error {
 	if s == "" {
-		return errors.New("this field cannot be empty")
+		return errNonEmpty
 	}
 
 	return nil
