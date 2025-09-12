@@ -45,6 +45,13 @@ jobs:
     with:
       subrepo: tui
 
+  backend-golint:
+    needs: handoff
+    if: contains(needs.handoff.outputs.category, 'Go') && contains(needs.handoff.outputs.directory, 'backend')
+    uses: ./.github/workflows/Golint.yml
+    with:
+      subrepo: backend
+
   web-tsc:
     needs: handoff
     uses: ./.github/workflows/Tsc.yml
