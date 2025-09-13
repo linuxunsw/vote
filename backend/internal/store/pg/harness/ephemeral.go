@@ -76,9 +76,10 @@ func EphemeralPool(t *testing.T) *pgxpool.Pool {
 	safeTestName = strings.ReplaceAll(safeTestName, "\\", "_")
 	testDBName := fmt.Sprintf("test-%s-%d", strings.ToLower(safeTestName), time.Now().UnixNano())
 
-	if len(testDBName) > 63 {
-		testDBName = testDBName[:63]
+	if len(testDBName) > 31 {
+		testDBName = testDBName[:31]
 	}
+	testDBName += fmt.Sprintf("_%d", os.Getpid())
 
 	createDBSQL := fmt.Sprintf("CREATE DATABASE %s;", pgx.Identifier{testDBName}.Sanitize())
 	_, err := controlDBConn.Exec(ctx, createDBSQL)
