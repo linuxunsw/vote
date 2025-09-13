@@ -18,6 +18,6 @@ jobs:
         with:
           fail_on_error: true
           filter_mode: nofilter
-          level: warning
+          level: info
           reporter: github-check
           workdir: ${{ inputs.subrepo }}
