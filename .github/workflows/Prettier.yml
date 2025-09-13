@@ -19,5 +19,6 @@ jobs:
           fail_on_error: true
           filter_mode: nofilter
           level: info
+          reviewdog_flags: '-tee'
           reporter: github-check
           workdir: ${{ inputs.subrepo }}
