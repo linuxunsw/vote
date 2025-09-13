@@ -6,6 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2/sse"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
+	"github.com/linuxunsw/vote/backend/internal/store"
 )
 
 func GetState(logger *slog.Logger) func(ctx context.Context, input *struct{}, send sse.Sender) {
@@ -18,7 +19,7 @@ func GetState(logger *slog.Logger) func(ctx context.Context, input *struct{}, se
 		// 	time.Sleep(1 * time.Second)
 		// }
 
-		err := send.Data(models.StateChangeEvent{NewState: models.StateClosed.String()})
+		err := send.Data(models.StateChangeEvent{NewState: string(store.StateClosed)})
 		if err != nil {
 			logger.Error("Unable to send StateChangeEvent", "error", err)
 		}

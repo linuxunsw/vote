@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type pgOTPStore struct {
+type PgOTPStore struct {
 	// *pgx.Pool
 	pool     PgxPoolIface
 	secret   string
@@ -26,11 +26,11 @@ type pgOTPStore struct {
 
 	// cannot create more than `rateLimitCount` OTPs within `rateLimitWithin` duration
 
-	nowProvider func() time.Time
+	NowProvider func() time.Time
 }
 
 func NewPgOTPStore(pool PgxPoolIface, cfg config.OTPConfig) store.OTPStore {
-	return &pgOTPStore{
+	return &PgOTPStore{
 		pool:     pool,
 		secret:   cfg.Secret,
 		maxRetry: cfg.MaxRetry,
@@ -39,17 +39,17 @@ func NewPgOTPStore(pool PgxPoolIface, cfg config.OTPConfig) store.OTPStore {
 		ratelimitCount:  cfg.RatelimitCount,
 		rateLimitWithin: cfg.RatelimitWithin,
 
-		nowProvider: time.Now,
+		NowProvider: time.Now,
 	}
 }
 
-func (st *pgOTPStore) hashCode(code string) string {
+func (st *PgOTPStore) hashCode(code string) string {
 	mac := hmac.New(sha256.New, []byte(st.secret))
 	mac.Write([]byte(code))
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func (st *pgOTPStore) hashCompare(code string, expectedCodeHash string) bool {
+func (st *PgOTPStore) hashCompare(code string, expectedCodeHash string) bool {
 	given := st.hashCode(code)
 	return hmac.Equal([]byte(expectedCodeHash), []byte(given))
 }
@@ -60,7 +60,7 @@ type otpRatelimit struct {
 	WindowStart time.Time `db:"window_start"`
 }
 
-func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code string) error {
+func (st *PgOTPStore) CreateOrReplace(ctx context.Context, zid string, code string) error {
 	tx, err := st.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code stri
 	}()
 
 	codeHash := st.hashCode(code)
-	now := st.nowProvider()
+	now := st.NowProvider()
 
 	ratelimitRows, err := st.pool.Query(ctx, `
 		select * from otp_ratelimit where zid = $1
@@ -137,7 +137,7 @@ func (st *pgOTPStore) CreateOrReplace(ctx context.Context, zid string, code stri
 	return nil
 }
 
-func (st *pgOTPStore) Active(ctx context.Context, zid string) (*store.OTPEntry, error) {
+func (st *PgOTPStore) Active(ctx context.Context, zid string) (*store.OTPEntry, error) {
 	rows, err := st.pool.Query(ctx, `
 		select * from otp
 		where zid = $1
@@ -157,7 +157,7 @@ func (st *pgOTPStore) Active(ctx context.Context, zid string) (*store.OTPEntry, 
 	return &entry, nil
 }
 
-func (st *pgOTPStore) activeForUpdate(ctx context.Context, zid string) (*store.OTPEntry, error) {
+func (st *PgOTPStore) activeForUpdate(ctx context.Context, zid string) (*store.OTPEntry, error) {
 	rows, err := st.pool.Query(ctx, `
 		select * from otp
 		where zid = $1
@@ -176,7 +176,7 @@ func (st *pgOTPStore) activeForUpdate(ctx context.Context, zid string) (*store.O
 	return &entry, nil
 }
 
-func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code string) (valid bool, reason store.OTPValidate, err error) {
+func (st *PgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code string) (valid bool, reason store.OTPValidate, err error) {
 	tx, err := st.pool.Begin(ctx)
 	if err != nil {
 		return false, store.OTPValidateInternalError, err
@@ -192,7 +192,7 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 		return false, store.OTPValidateInternalError, err
 	}
 
-	now := st.nowProvider()
+	now := st.NowProvider()
 	if otp.CreatedAt.Add(st.expiry).Before(now) {
 		return false, store.OTPValidateNotFoundOrExpired, nil
 	}
@@ -234,7 +234,7 @@ func (st *pgOTPStore) ValidateAndConsume(ctx context.Context, zid string, code s
 	return false, store.OTPValidateMismatch, nil
 }
 
-func (st *pgOTPStore) ConsumeIfExists(ctx context.Context, zid string) error {
+func (st *PgOTPStore) ConsumeIfExists(ctx context.Context, zid string) error {
 	tx, err := st.pool.Begin(ctx)
 	if err != nil {
 		return err

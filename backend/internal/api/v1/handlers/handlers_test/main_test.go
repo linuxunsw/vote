@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/go-chi/httplog/v3"
@@ -32,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 // See backend/cmd/api/main.go
-func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
+func NewAPIWithNowProvider(t *testing.T, nowProvider func() time.Time) (humatest.TestAPI, *mock_mailer.MockMailer) {
 	cfg := config.Load()
 
 	// intial cfg for both logger and httplog middleware
@@ -40,7 +41,7 @@ func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
 	loggerOpts := &slog.HandlerOptions{
 		ReplaceAttr: logFormat.ReplaceAttr,
 	}
-	
+
 	// init mailer and db
 	mailer := mock_mailer.NewMockMailer()
 	pool := harness.EphemeralPool(t)
@@ -59,19 +60,27 @@ func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
 	electionStore := pg.NewPgElectionStore(pool)
 	nominationStore := pg.NewPgNominationStore(pool)
 
+	otpStore.(*pg.PgOTPStore).NowProvider = nowProvider
+	electionStore.(*pg.PgElectionStore).NowProvider = nowProvider
+	nominationStore.(*pg.PgNominationStore).NowProvider = nowProvider
+
 	stores := v1.HandlerDependencies{
-		Logger:   logger,
-		Cfg:      cfg,
-		Mailer:   mailer,
-		Checker:  nil,
-		OtpStore: otpStore,
-		ElectionStore: electionStore,
+		Logger:          logger,
+		Cfg:             cfg,
+		Mailer:          mailer,
+		Checker:         nil,
+		OtpStore:        otpStore,
+		ElectionStore:   electionStore,
 		NominationStore: nominationStore,
 	}
 
 	v1.Register(api, stores)
 
 	return api, mailer.(*mock_mailer.MockMailer)
+}
+
+func NewAPI(t *testing.T) (humatest.TestAPI, *mock_mailer.MockMailer) {
+	return NewAPIWithNowProvider(t, time.Now)
 }
 
 func createElection(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, jwt string, memberList []string) string {

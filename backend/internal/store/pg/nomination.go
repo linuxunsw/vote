@@ -9,23 +9,23 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
 
-type pgNominationStore struct {
+type PgNominationStore struct {
 	// *pgx.Pool
 	pool PgxPoolIface
 
-	nowProvider func() time.Time
+	NowProvider func() time.Time
 }
 
 func NewPgNominationStore(pool PgxPoolIface) store.NominationStore {
-	return &pgNominationStore{
+	return &PgNominationStore{
 		pool: pool,
 
-		nowProvider: time.Now,
+		NowProvider: time.Now,
 	}
 }
 
-func (st *pgNominationStore) SubmitOrReplaceNomination(ctx context.Context, electionID string, candidateZid string, submission store.SubmitNomination) error {
-	now := st.nowProvider()
+func (st *PgNominationStore) SubmitOrReplaceNomination(ctx context.Context, electionID string, candidateZid string, submission store.SubmitNomination) error {
+	now := st.NowProvider()
 
 	_, err := st.pool.Exec(ctx, `
 		insert into nominations (
@@ -60,7 +60,7 @@ func (st *pgNominationStore) SubmitOrReplaceNomination(ctx context.Context, elec
 	return err
 }
 
-func (st *pgNominationStore) GetNomination(ctx context.Context, electionID string, candidateZid string) (*store.Nomination, error) {
+func (st *PgNominationStore) GetNomination(ctx context.Context, electionID string, candidateZid string) (*store.Nomination, error) {
 	rows, err := st.pool.Query(ctx, `
 		select * from nominations
 		where election_id = $1 and candidate_zid = $2

@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -11,19 +12,23 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
 
-type pgElectionStore struct {
+type PgElectionStore struct {
 	// *pgx.Pool
-	pool     PgxPoolIface
+	pool PgxPoolIface
 
-	nowProvider func() time.Time
+	NowProvider func() time.Time
 	v7Provider  func() (uuid.UUID, error)
 }
 
+type query interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
 func NewPgElectionStore(pool PgxPoolIface) store.ElectionStore {
-	return &pgElectionStore{
+	return &PgElectionStore{
 		pool: pool,
 
-		nowProvider: time.Now,
+		NowProvider: time.Now,
 		v7Provider:  uuid.NewV7,
 	}
 }
@@ -38,10 +43,10 @@ func deduplicateAndVerifyEntries(entries []string, electionId string) (deduplica
 		if !zIDRegex.MatchString(zid) {
 			return nil, false
 		}
-		
+
 		if _, exists := dedupEntries[zid]; !exists {
 			dedupEntries[zid] = store.ElectionMemberEntry{
-				Zid: zid,
+				Zid:        zid,
 				ElectionID: electionId,
 			}
 		}
@@ -55,7 +60,26 @@ func deduplicateAndVerifyEntries(entries []string, electionId string) (deduplica
 	return dedupEntriesList, true
 }
 
-func (st *pgElectionStore) SetMembers(ctx context.Context, electionId string, entries []string) error {
+func (st *PgElectionStore) assertElectionExists(ctx context.Context, tx query, electionId string) error {
+	rows, err := tx.Query(ctx, `
+		select 1 as exists from elections
+		where election_id = $1
+	`, electionId)
+	if err != nil {
+		return err
+	}
+
+	_, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[struct{ Exists int }])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return store.ErrElectionNotFound
+	} else if err != nil {
+		return store.ErrElectionNotFound
+	}
+
+	return nil
+}
+
+func (st *PgElectionStore) SetMembers(ctx context.Context, electionId string, entries []string) error {
 	tx, err := st.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -63,6 +87,11 @@ func (st *pgElectionStore) SetMembers(ctx context.Context, electionId string, en
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
+
+	// ErrElectionNotFound
+	if err := st.assertElectionExists(ctx, tx, electionId); err != nil {
+		return err
+	}
 
 	deduplicatedEntries, valid := deduplicateAndVerifyEntries(entries, electionId)
 	if !valid {
@@ -128,7 +157,12 @@ func (st *pgElectionStore) SetMembers(ctx context.Context, electionId string, en
 	return nil
 }
 
-func (st *pgElectionStore) GetMember(ctx context.Context, electionId string, zid string) (*store.ElectionMemberEntry, error) {
+func (st *PgElectionStore) GetMember(ctx context.Context, electionId string, zid string) (*store.ElectionMemberEntry, error) {
+	// ErrElectionNotFound
+	if err := st.assertElectionExists(ctx, st.pool, electionId); err != nil {
+		return nil, err
+	}
+
 	rows, err := st.pool.Query(ctx, `
 		select * from election_member_list
 		where election_id = $1 and zid = $2
@@ -147,8 +181,8 @@ func (st *pgElectionStore) GetMember(ctx context.Context, electionId string, zid
 	return &entry, nil
 }
 
-func (st *pgElectionStore) CreateElection(ctx context.Context, name string) (string, error) {
-	now := st.nowProvider()
+func (st *PgElectionStore) CreateElection(ctx context.Context, name string) (string, error) {
+	now := st.NowProvider()
 
 	current, err := st.CurrentElection(ctx)
 	if err != nil {
@@ -173,9 +207,9 @@ func (st *pgElectionStore) CreateElection(ctx context.Context, name string) (str
 	return electionId.String(), nil
 }
 
-func (st *pgElectionStore) CurrentElection(ctx context.Context) (*store.Election, error) {
+func (st *PgElectionStore) currentElection(ctx context.Context, tx query) (*store.Election, error) {
 	// get latest election
-	rows, err := st.pool.Query(ctx, `
+	rows, err := tx.Query(ctx, `
 		select * from elections
 		order by created_at desc
 		limit 1;
@@ -197,4 +231,98 @@ func (st *pgElectionStore) CurrentElection(ctx context.Context) (*store.Election
 	}
 
 	return &election, nil
+}
+
+func (st *PgElectionStore) CurrentElection(ctx context.Context) (*store.Election, error) {
+	return st.currentElection(ctx, st.pool)
+}
+
+/* func (st *pgElectionStore) GetElection(ctx context.Context, electionId string) (*store.Election, error) {
+	rows, err := st.pool.Query(ctx, `
+		select * from elections
+		where election_id = $1
+	`, electionId)
+	if err != nil {
+		return nil, err
+	}
+
+	election, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[store.Election])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &election, nil
+} */
+
+// timestamp fields will only be set once
+var timestampTransitionAway = map[store.ElectionState]pgx.Identifier{
+	// created_at is always set on creation
+	"CLOSED":             {"nominations_open_at"},
+	"NOMINATIONS_OPEN":   {"nominations_close_at"},
+	"NOMINATIONS_CLOSED": {"voting_open_at"},
+	"VOTING_OPEN":        {"voting_close_at"},
+	"VOTING_CLOSED":      {"results_published_at"},
+	"RESULTS":            {"ended_at"},
+	"END":                nil, // final state, no timestamp
+}
+
+func (st *PgElectionStore) CurrentElectionSetState(ctx context.Context, newStateString string) error {
+	tx, err := st.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	current, err := st.currentElection(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if current == nil {
+		return store.ErrElectionNotFound
+	}
+
+	currentState := current.State
+	newState, err := currentState.TryTransition(newStateString)
+	if err != nil {
+		return err
+	}
+	if newState == currentState {
+		// no-op
+		return nil
+	}
+
+	// transition from currentState -> newState
+	now := st.NowProvider()
+	timestampIdent := timestampTransitionAway[currentState]
+
+	_, err = tx.Exec(ctx, `
+		update elections
+		set state = $1
+		where election_id = $2
+	`, newState, current.ElectionID)
+	if err != nil {
+		return err
+	}
+
+	if timestampIdent != nil {
+		// pgx.Identifier does perform sanitisation
+		sql := fmt.Sprintf(`
+			update elections
+			set %s = $1
+			where election_id = $2 and %s is null
+		`, timestampIdent.Sanitize(), timestampIdent.Sanitize())
+		_, err = tx.Exec(ctx, sql, now, current.ElectionID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }

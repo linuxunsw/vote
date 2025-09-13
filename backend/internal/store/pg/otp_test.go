@@ -10,11 +10,11 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-func shimNow(st *pgOTPStore, testNow time.Time) {
+func shimNow(st *PgOTPStore, testNow time.Time) {
 	nowProvider := func() time.Time {
 		return testNow
 	}
-	st.nowProvider = nowProvider
+	st.NowProvider = nowProvider
 }
 
 func TestCreateOrReplaceEmptyRatelimit(t *testing.T) {
@@ -25,7 +25,7 @@ func TestCreateOrReplaceEmptyRatelimit(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNow := time.Now()
 	zid := "z0000000"
@@ -63,7 +63,7 @@ func TestCreateOrReplaceSuccessRatelimit(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNow := time.Now()
 	zid := "z0000000"
@@ -106,7 +106,7 @@ func TestCreateOrReplaceSuccessAfterRatelimit(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNow := time.Now()
 	testAfterRatelimit := testNow.Add(st.rateLimitWithin).Add(1 * time.Second)
@@ -157,7 +157,7 @@ func TestActiveExists(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNowBegin := time.Now()
 	zid := "z0000000"
@@ -198,7 +198,7 @@ func TestActiveNoExist(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	zid := "z0000000"
 
@@ -227,7 +227,7 @@ func TestValidateAndConsumeNoEntry(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	zid := "z0000000"
 
@@ -261,7 +261,7 @@ func TestValidateAndConsumeExpired(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNowBegin := time.Now()
 	testNowAfterExpiry := testNowBegin.Add(st.expiry).Add(1 * time.Second)
@@ -300,7 +300,7 @@ func TestValidateAndConsumeAttemptsExceeded(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNowBegin := time.Now()
 	zid := "z0000000"
@@ -346,7 +346,7 @@ func TestValidateAndConsumeMismatch(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNowBegin := time.Now()
 	zid := "z0000000"
@@ -389,7 +389,7 @@ func TestValidateAndConsumeSuccess(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	testNowBegin := time.Now()
 	zid := "z0000000"
@@ -437,7 +437,7 @@ func TestConsumeIfExists(t *testing.T) {
 	defer mock.Close()
 
 	ctx := t.Context()
-	st := NewPgOTPStore(mock, config.Load().OTP).(*pgOTPStore)
+	st := NewPgOTPStore(mock, config.Load().OTP).(*PgOTPStore)
 
 	zid := "z0000000"
 
