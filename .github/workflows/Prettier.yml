@@ -1,0 +1,24 @@
+name: Prettier
+on:
+  workflow_call:
+    inputs:
+      subrepo:
+        required: true
+        type: string
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: prettier
+        uses: gcaracuel/reviewdog-action-prettier@ddacbf3caf877fd012b68601baa1903cde600bc7 # v1.2.0
+        with:
+          fail_on_error: true
+          filter_mode: nofilter
+          level: info
+          reviewdog_flags: '-tee'
+          reporter: github-check
+          workdir: ${{ inputs.subrepo }}

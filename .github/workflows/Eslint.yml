@@ -1,0 +1,22 @@
+name: Eslint
+on:
+  workflow_call:
+    inputs:
+      subrepo:
+        required: true
+        type: string
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: eslint
+        uses: reviewdog/action-eslint@556a3fdaf8b4201d4d74d406013386aa4f7dab96 # v1.34.0
+        with:
+          fail_level: any
+          filter_mode: nofilter
+          reporter: github-check
+          workdir: ${{ inputs.subrepo }}
