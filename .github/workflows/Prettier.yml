@@ -20,3 +20,4 @@ jobs:
           filter_mode: nofilter
           reporter: github-check
           workdir: ${{ inputs.subrepo }}
+          reviewdog_flags: '-tee'
