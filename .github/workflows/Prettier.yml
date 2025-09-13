@@ -14,7 +14,7 @@ jobs:
           fetch-depth: 0
 
       - name: prettier
-        uses: EPMatt/reviewdog-action-prettier@93fb51ed5da157256e1d8c998fb249837304050c # v1.2.0
+        uses: gcaracuel/reviewdog-action-prettier@ddacbf3caf877fd012b68601baa1903cde600bc7 # v1.2.0
         with:
           fail_on_error: true
           filter_mode: nofilter
