@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/wish/activeterm"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
+	"github.com/charmbracelet/wish/ratelimiter"
 	"github.com/linuxunsw/vote/tui/internal/tui/root"
 )
 
@@ -33,12 +34,16 @@ func SSH(host string, port string) {
 	log.SetReportTimestamp(true)
 	log.SetPrefix("server")
 
+	// Limits the amount of connections which can be made
+	rl := ratelimiter.NewRateLimiter(1, 5, 100)
+
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
-		wish.WithHostKeyPath(".ssh/id_ed25519"),
+		wish.WithHostKeyPath(".ssh/wish"),
 		wish.WithMiddleware(
 			bubbletea.Middleware(teaHandler),
 			activeterm.Middleware(),
+			ratelimiter.Middleware(rl),
 			logging.StructuredMiddlewareWithLogger(log, log.GetLevel()),
 		),
 
@@ -57,8 +62,8 @@ func SSH(host string, port string) {
 			done <- nil
 		}
 	}()
-
 	<-done
+
 	log.Info("Stopping SSH server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer func() { cancel() }()
@@ -68,8 +73,7 @@ func SSH(host string, port string) {
 }
 
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	// This should never fail, as we are using the activeterm middleware.
-	// pty, _, _ := s.Pty()
 	m := root.New(s.User())
+
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
 }
