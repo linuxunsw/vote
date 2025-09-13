@@ -71,8 +71,8 @@ func TestNominationSubmit(t *testing.T) {
 		ExecutiveRoles:     []string{"president", "secretary"},
 		CandidateStatement: "Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50",
 		URL:                nil,
-		CreatedAt: 			outputNom.CreatedAt,
-		UpdatedAt: 			outputNom.UpdatedAt,
+		CreatedAt:          outputNom.CreatedAt,
+		UpdatedAt:          outputNom.UpdatedAt,
 	}
 
 	if err := compareStructs(nominationResp, outputNom); err != nil {

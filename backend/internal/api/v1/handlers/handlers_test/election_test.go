@@ -22,7 +22,7 @@ func TestElectionCreateFailure(t *testing.T) {
 	resp := api.Post("/api/v1/elections", adminCookie, map[string]any{
 		"name": "Test Electione!",
 	})
-	if resp.Code != 409 {
-		t.Fatalf("expected 409 OK, got %d", resp.Code)
+	if resp.Code != 400 {
+		t.Fatalf("expected 400 Bad Request, got %d", resp.Code)
 	}
 }

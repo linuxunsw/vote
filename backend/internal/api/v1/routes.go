@@ -133,14 +133,22 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Tags:        []string{"Elections"},
 	}, handlers.ElectionMemberListSet(deps.Logger, deps.ElectionStore))
 
-	// huma.Register(adminRoutes, huma.Operation{
-	// 	OperationID: "admin-update-election-state",
-	// 	Method:      "PUT",
-	// 	Path:        "/elections/state",
-	// 	Summary:     "Update the election state",
-	// 	Tags:        []string{"Admin"},
-	// }, handlers.UpdateElectionState(store))
-	//
+	huma.Register(adminRoutes, huma.Operation{
+		OperationID: "admin-transition-election-state",
+		Method:      "PUT",
+		Path:        "/elections/state",
+		Summary:     "Transition the election state",
+		Tags:        []string{"Admin"},
+	}, handlers.TransitionElectionState(deps.Logger, deps.ElectionStore))
+
+	huma.Register(adminRoutes, huma.Operation{
+		OperationID: "admin-get-election-state",
+		Method:      "GET",
+		Path:        "/elections/state",
+		Summary:     "Get the current election state",
+		Tags:        []string{"Admin"},
+	}, handlers.GetElectionState(deps.Logger, deps.ElectionStore))
+
 	// huma.Register(adminRoutes, huma.Operation{
 	// 	OperationID: "admin-upload-members",
 	// 	Method:      "POST",

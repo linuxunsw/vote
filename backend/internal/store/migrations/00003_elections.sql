@@ -9,8 +9,8 @@ create table "election_member_list" (
 -- NO_ELECTION is external
 create type "election_status" as enum (
     'CLOSED',
-    'NOMINATION_OPEN',
-    'NOMINATION_CLOSED',
+    'NOMINATIONS_OPEN',
+    'NOMINATIONS_CLOSED',
     'VOTING_OPEN',
     'VOTING_CLOSED',
     'RESULTS',
