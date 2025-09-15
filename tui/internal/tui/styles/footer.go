@@ -8,3 +8,10 @@ var FooterStyle = lipgloss.NewStyle().
 	Faint(true).
 	PaddingTop(1).
 	PaddingBottom(1)
+
+var ErrorFooterStyle = lipgloss.NewStyle().
+	AlignHorizontal(lipgloss.Center).
+	Italic(true).
+	PaddingTop(1).
+	PaddingBottom(1).
+	Foreground(lipgloss.ANSIColor(9))

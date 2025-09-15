@@ -11,3 +11,11 @@ func ShowFooter(zid string, width int) string {
 	}
 	return styles.FooterStyle.Width(width).Render(content)
 }
+
+func ShowErrorFooter(error error, width int) string {
+	content := ""
+	if error != nil {
+		content = error.Error()
+	}
+	return styles.ErrorFooterStyle.Width(width).Render(content)
+}

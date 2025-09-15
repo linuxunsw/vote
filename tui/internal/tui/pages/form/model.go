@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
 )
 
@@ -44,12 +45,9 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.form = f
 	}
 
-	// Quit app when form completed
-	// TODO: change to submission page
 	if m.form.State == huh.StateCompleted && !m.isSubmitted {
 		m.isSubmitted = true
 
-		// TODO: get roles from form
 		data := messages.Submission{
 			Name:      m.form.GetString("name"),
 			Email:     m.form.GetString("email"),
@@ -58,9 +56,14 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Url:       m.form.GetString("url"),
 		}
 
-		return m, tea.Batch(
-			messages.SendSubmission(data),
-		)
+		formRoles := m.form.Get("roles")
+		roles, ok := formRoles.([]string)
+		if !ok {
+			m.logger.Error("failed to convert roles to str slice")
+		}
+		data.Roles = roles
+
+		return m, messages.SendNomination(data)
 	}
 
 	switch msg := msg.(type) {
@@ -70,6 +73,12 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cWidth = msg.Width
 
 		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
+	case messages.ServerErrMsg:
+		// TODO: separate AUTHORISATION ERRORS from other errors
+		return m, tea.Sequence(
+			messages.SendPageChange(pages.PageSubmit),
+			messages.SendPublicSubmitFormResult(msg.RespID, msg.Error),
+		)
 	}
 
 	return m, cmd

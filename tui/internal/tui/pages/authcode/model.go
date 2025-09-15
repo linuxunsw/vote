@@ -39,6 +39,11 @@ func (m *authCodeModel) Init() tea.Cmd {
 }
 
 func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	form, cmd := m.form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+	}
+
 	switch msg := msg.(type) {
 	case messages.PageContentSizeMsg:
 		log.Debug("PageContentSizeMsg", "height", msg.Height, "width", msg.Width)
@@ -50,17 +55,21 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		formWidth := lipgloss.Width(m.form.View())
 		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
 		return m, nil
+	case messages.ServerErrMsg:
+		m.isSubmitted = false
+		m.form = forms.OTP().WithHeight(m.cHeight).WithWidth(m.cWidth)
+		m.form.Init()
+		return m, nil
 	}
 
-	form, cmd := m.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.form = f
-	}
-
+	// If the user has completed the form, send the OTP
+	// and prevent them from resubmitting the form until
+	// the page either changes or an error occurs and we
+	// reset the form + display an error message
 	if m.form.State == huh.StateCompleted && !m.isSubmitted {
 		m.isSubmitted = true
 		otp := m.form.GetString("otp")
-		return m, messages.SendVerifyOTP(otp)
+		return m, messages.SendSubmitOTP(otp)
 	}
 
 	return m, cmd
