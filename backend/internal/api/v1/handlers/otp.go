@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/lestrrat-go/jwx/v3/jwa"
@@ -134,9 +135,16 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 			log.Info("admin login", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
 		}
 
+		tokenExpiry := time.Now().Add(cfg.Duration)
+
 		// user is now authenticated and authorised as a society member
 		// create JWT
-		token, err := jwt.NewBuilder().Issuer(cfg.Issuer).Subject(input.Body.Zid).Claim("isAdmin", isAdmin).Build()
+		token, err := jwt.NewBuilder().
+			Issuer(cfg.Issuer).
+			Subject(input.Body.Zid).
+			Claim("isAdmin", isAdmin).
+			Expiration(tokenExpiry).
+			Build()
 		if err != nil {
 			log.Error("failed to build JWT", "error", err, "request_id", requestid.Get(ctx))
 			return nil, huma.Error500InternalServerError("internal error")
@@ -161,6 +169,13 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 				Secure:   true,
 				SameSite: http.SameSiteLaxMode,
 				Path:     "/",
+				Expires:  tokenExpiry,
+			},
+
+			Body: models.SubmitOTPResponseBody{
+				Zid: input.Body.Zid,
+				Expiry: tokenExpiry,
+				IsAdmin: isAdmin,
 			},
 		}, nil
 	}

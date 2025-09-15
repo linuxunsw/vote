@@ -1,6 +1,9 @@
 package models
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 type GenerateOTPInput struct {
 	Body struct {
@@ -20,4 +23,12 @@ type SubmitOTPInput struct {
 
 type SubmitOTPResponse struct {
 	SetCookie http.Cookie `header:"Set-Cookie"`
+
+	Body SubmitOTPResponseBody
+}
+
+type SubmitOTPResponseBody struct {
+	Zid     string    `json:"zid" doc:"User zID" pattern:"^z[0-9]{7}$" example:"z0000000"`
+	Expiry  time.Time `json:"expiry" format:"date-time" example:"2024-01-15T10:30:00Z" doc:"Timestamp when your session expires."`
+	IsAdmin bool      `json:"is_admin" doc:"Admin status"`
 }

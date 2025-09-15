@@ -31,8 +31,8 @@ func TestNominationSubmit(t *testing.T) {
 		"zid": zid,
 		"otp": code,
 	})
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
 
 	res := resp.Result()
