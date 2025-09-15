@@ -58,3 +58,17 @@ jobs:
     if: contains(needs.handoff.outputs.category, 'TypeScript') && contains(needs.handoff.outputs.directory, 'web')
     with:
       subrepo: web
+
+  web-eslint:
+    needs: handoff
+    uses: ./.github/workflows/Eslint.yml
+    if: contains(needs.handoff.outputs.category, 'TypeScript') && contains(needs.handoff.outputs.directory, 'web')
+    with:
+      subrepo: web
+
+  web-prettier:
+    needs: handoff
+    uses: ./.github/workflows/Prettier.yml
+    if: contains(needs.handoff.outputs.directory, 'web')
+    with:
+      subrepo: web
