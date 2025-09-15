@@ -43,7 +43,7 @@ func TestOTPAdmins(t *testing.T) {
 	t.Setenv("ADMIN_ZIDS", "z0000000,z0000001,z0000002")
 
 	zid := "z0000001"
-	
+
 	cfg := config.Load()
 	api, mailer := NewAPI(t)
 
