@@ -1,0 +1,11 @@
+name = "vote"
+main = "src/index.ts"
+compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2024-09-23"
+
+[[send_email]]
+name = "email"
+
+[observability]
+enabled = true
+head_sampling_rate = 1 # optional. default = 1.
