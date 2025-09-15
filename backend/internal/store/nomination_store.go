@@ -24,7 +24,7 @@ type SubmitNomination struct {
 	DiscordUsername    string   `db:"discord_username" json:"discord_username" maxLength:"32" example:"johndoe"`
 	ExecutiveRoles     []string `db:"executive_roles" json:"executive_roles" minItems:"1" maxItems:"6" uniqueItems:"true" enum:"president,secretary,treasurer,arc_delegate,edi_officer,grievance_officer" example:"[\"president\", \"secretary\"]"`
 	CandidateStatement string   `db:"candidate_statement" json:"candidate_statement" required:"true" minLength:"50" maxLength:"2000" example:"I am running for president because..."`
-	URL                *string  `db:"url" json:"url" format:"uri" required:"false" example:"https://johndoe.com"`
+	URL                *string  `db:"url" json:"url,omitempty" format:"uri" required:"false" example:"https://johndoe.com"`
 }
 
 type NominationStore interface {
