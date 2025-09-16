@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	UnauthorisedError error = errors.New("your session has expired, please log in again")
+	ErrUnauthorised error = errors.New("your session has expired, please log in again")
 )
 
 // INFO: Used to prevent panic as we aren't using a RequestEditorFn
@@ -139,7 +139,7 @@ func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.C
 			return messages.ServerErrMsg{
 				StatusCode: resp.StatusCode(),
 				RespID:     respID,
-				Error:      UnauthorisedError,
+				Error:      ErrUnauthorised,
 			}
 		}
 		if resp.StatusCode() != http.StatusNoContent {

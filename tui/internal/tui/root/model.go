@@ -172,7 +172,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.needsSizeUpdate = true
 
 		// Reset everything if unauthorised (means cookie has expired)
-		if msg.Error == sdk.UnauthorisedError {
+		if msg.Error == sdk.ErrUnauthorised {
 			// reset pages
 			m.pages[pages.PageAuth] = auth.New(m.log)
 			m.pages[pages.PageAuthCode] = authcode.New(m.log)
