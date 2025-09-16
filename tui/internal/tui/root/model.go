@@ -170,6 +170,21 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.error = msg.Error
 		m.needsSizeUpdate = true
+
+		// Reset everything if unauthorised (means cookie has expired)
+		if msg.Error == sdk.UnauthorisedError {
+			// reset pages
+			m.pages[pages.PageAuth] = auth.New(m.log)
+			m.pages[pages.PageAuthCode] = authcode.New(m.log)
+			m.pages[pages.PageForm] = form.New(m.log)
+			m.loaded[pages.PageAuth] = false
+			m.loaded[pages.PageAuthCode] = false
+			m.loaded[pages.PageForm] = false
+
+			m.isAuthenticated = false
+			return m, messages.SendPageChange(pages.PageAuth)
+
+		}
 	case spinner.TickMsg:
 		m.loadingSpinner, cmd = m.loadingSpinner.Update(msg)
 		return m, cmd

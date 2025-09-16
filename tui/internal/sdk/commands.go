@@ -15,6 +15,10 @@ import (
 	"github.com/oapi-codegen/runtime/types"
 )
 
+var (
+	UnauthorisedError error = errors.New("your session has expired, please log in again")
+)
+
 // INFO: Used to prevent panic as we aren't using a RequestEditorFn
 // probably a better way to do this </3
 var noop RequestEditorFn = func(ctx context.Context, req *http.Request) error { return nil }
@@ -131,6 +135,13 @@ func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.C
 
 		// Add request ID as a reference code
 		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
+		if resp.StatusCode() == http.StatusUnauthorized {
+			return messages.ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      UnauthorisedError,
+			}
+		}
 		if resp.StatusCode() != http.StatusNoContent {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
