@@ -19,13 +19,16 @@ var (
 	ErrUnauthorised error = errors.New("your session has expired, please log in again")
 )
 
-// INFO: Used to prevent panic as we aren't using a RequestEditorFn
-// probably a better way to do this </3
-var noop RequestEditorFn = func(ctx context.Context, req *http.Request) error { return nil }
+func createIPRequestEditor(ip string) RequestEditorFn {
+	return func(ctx context.Context, req *http.Request) error {
+		req.Header.Set("X-Real-IP", ip)
+		return nil
+	}
+}
 
 // Sends request to generate OTP, sends response back to root model as
 // ServerErrMsg or a success message
-func GenerateOTPCmd(c *ClientWithResponses, zID string) tea.Cmd {
+func GenerateOTPCmd(c *ClientWithIP, zID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
@@ -34,7 +37,7 @@ func GenerateOTPCmd(c *ClientWithResponses, zID string) tea.Cmd {
 			Zid: zID,
 		}
 
-		resp, err := c.GenerateOtpWithResponse(ctx, body, noop)
+		resp, err := c.Client.GenerateOtpWithResponse(ctx, body, createIPRequestEditor(c.IP))
 		if err != nil {
 			return messages.ServerErrMsg{
 				RespID: "",
@@ -65,7 +68,7 @@ func GenerateOTPCmd(c *ClientWithResponses, zID string) tea.Cmd {
 
 // Sends request to submit OTP, sends response back to root model as
 // ServerErrMsg or a success message
-func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
+func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
@@ -75,7 +78,7 @@ func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
 			Otp: otp,
 		}
 
-		resp, err := c.SubmitOtpWithResponse(ctx, body, noop)
+		resp, err := c.Client.SubmitOtpWithResponse(ctx, body, createIPRequestEditor(c.IP))
 		if err != nil {
 			return messages.ServerErrMsg{
 				RespID: "",
@@ -83,7 +86,7 @@ func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
 			}
 		}
 
-		if resp.StatusCode() != http.StatusNoContent {
+		if resp.StatusCode() != http.StatusOK {
 			respID := resp.HTTPResponse.Header.Get("X-Request-ID")
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
@@ -102,7 +105,7 @@ func SubmitOTPCmd(c *ClientWithResponses, zID string, otp string) tea.Cmd {
 
 // Sends request to submit a nomination, sends response back to root model as
 // ServerErrMsg or a success message
-func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.Cmd {
+func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
@@ -125,7 +128,7 @@ func SubmitNominationCmd(c *ClientWithResponses, data messages.Submission) tea.C
 			body.Url = &data.Url
 		}
 
-		resp, err := c.SubmitNominationWithResponse(ctx, body, noop)
+		resp, err := c.Client.SubmitNominationWithResponse(ctx, body, createIPRequestEditor(c.IP))
 		if err != nil {
 			return messages.ServerErrMsg{
 				RespID: "",

@@ -2,8 +2,6 @@ package root
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"strings"
 	"unicode"
@@ -48,7 +46,7 @@ type rootModel struct {
 
 	current pages.PageID
 
-	client          *sdk.ClientWithResponses
+	client          *sdk.ClientWithIP
 	isAuthenticated bool
 	error           error
 
@@ -60,7 +58,7 @@ type rootModel struct {
 	data formData
 }
 
-func New(user string) tea.Model {
+func New(user, ip string) tea.Model {
 	keyMap := keys.DefaultKeyMap()
 
 	logger := createLogger(user)
@@ -77,7 +75,7 @@ func New(user string) tea.Model {
 	loadingSpinner := spinner.New()
 	loadingSpinner.Spinner = spinner.Ellipsis
 
-	client := createClient(logger)
+	client := sdk.CreateClient(logger, ip)
 
 	model := &rootModel{
 		log:             logger,
@@ -346,18 +344,4 @@ func createLogger(user string) *log.Logger {
 	}
 
 	return logger
-}
-
-func createClient(logger *log.Logger) *sdk.ClientWithResponses {
-	jar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: jar,
-	}
-	serverAddr := viper.GetString("tui.server")
-	client, err := sdk.NewClientWithResponses(serverAddr, sdk.WithHTTPClient(httpClient))
-	if err != nil {
-		logger.Fatal("Failed to create client", "err", err)
-	}
-
-	return client
 }
