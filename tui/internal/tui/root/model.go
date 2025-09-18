@@ -2,8 +2,6 @@ package root
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"strings"
 	"unicode"
@@ -48,7 +46,7 @@ type rootModel struct {
 
 	current pages.PageID
 
-	client          *sdk.ClientWithResponses
+	client          *sdk.ClientWithIP
 	isAuthenticated bool
 	error           error
 
@@ -60,7 +58,7 @@ type rootModel struct {
 	data formData
 }
 
-func New(user string) tea.Model {
+func New(user, ip string) tea.Model {
 	keyMap := keys.DefaultKeyMap()
 
 	logger := createLogger(user)
@@ -77,7 +75,7 @@ func New(user string) tea.Model {
 	loadingSpinner := spinner.New()
 	loadingSpinner.Spinner = spinner.Ellipsis
 
-	client := createClient(logger)
+	client := sdk.CreateClient(logger, ip)
 
 	model := &rootModel{
 		log:             logger,
@@ -170,6 +168,21 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.error = msg.Error
 		m.needsSizeUpdate = true
+
+		// Reset everything if unauthorised (means cookie has expired)
+		if msg.Error == sdk.ErrUnauthorised {
+			// reset pages
+			m.pages[pages.PageAuth] = auth.New(m.log)
+			m.pages[pages.PageAuthCode] = authcode.New(m.log)
+			m.pages[pages.PageForm] = form.New(m.log)
+			m.loaded[pages.PageAuth] = false
+			m.loaded[pages.PageAuthCode] = false
+			m.loaded[pages.PageForm] = false
+
+			m.isAuthenticated = false
+			return m, messages.SendPageChange(pages.PageAuth)
+
+		}
 	case spinner.TickMsg:
 		m.loadingSpinner, cmd = m.loadingSpinner.Update(msg)
 		return m, cmd
@@ -331,18 +344,4 @@ func createLogger(user string) *log.Logger {
 	}
 
 	return logger
-}
-
-func createClient(logger *log.Logger) *sdk.ClientWithResponses {
-	jar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: jar,
-	}
-	serverAddr := viper.GetString("tui.server")
-	client, err := sdk.NewClientWithResponses(serverAddr, sdk.WithHTTPClient(httpClient))
-	if err != nil {
-		logger.Fatal("Failed to create client", "err", err)
-	}
-
-	return client
 }

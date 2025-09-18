@@ -22,7 +22,7 @@ import (
 
 // Runs the program locally
 func Local() {
-	p := tea.NewProgram(root.New(""), tea.WithAltScreen())
+	p := tea.NewProgram(root.New("", ""), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal("TUI error:", err)
 	}
@@ -73,7 +73,7 @@ func SSH(host string, port string) {
 }
 
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	m := root.New(s.User())
+	m := root.New(s.User(), s.RemoteAddr().String())
 
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
 }
