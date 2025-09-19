@@ -7,13 +7,11 @@ import (
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
-	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/sse"
 )
 
 type HandlerDependencies struct {
@@ -65,7 +63,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 	userRoutes.UseMiddleware(authMiddleware)
 
 	// state updates via SSE
-	sse.Register(userRoutes, huma.Operation{
+	/* sse.Register(userRoutes, huma.Operation{
 		OperationID: "state",
 		Method:      http.MethodGet,
 		Path:        "/state",
@@ -75,7 +73,16 @@ func Register(api huma.API, deps HandlerDependencies) {
 	}, map[string]any{
 		"stateChange": &models.StateChangeEvent{},
 	},
-		handlers.GetState(deps.Logger))
+		handlers.GetState(deps.Logger)) */
+
+	// election state
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-election-state",
+		Method:      "GET",
+		Path:        "/state",
+		Summary:     "Get the current election state",
+		Tags:        []string{"State"},
+	}, handlers.GetElectionState(deps.Logger, deps.ElectionStore))
 
 	// nomination
 	huma.Register(userRoutes, huma.Operation{
@@ -136,18 +143,10 @@ func Register(api huma.API, deps HandlerDependencies) {
 	huma.Register(adminRoutes, huma.Operation{
 		OperationID: "admin-transition-election-state",
 		Method:      "PUT",
-		Path:        "/elections/state",
+		Path:        "/state",
 		Summary:     "Transition the election state",
 		Tags:        []string{"Admin"},
 	}, handlers.TransitionElectionState(deps.Logger, deps.ElectionStore))
-
-	huma.Register(adminRoutes, huma.Operation{
-		OperationID: "admin-get-election-state",
-		Method:      "GET",
-		Path:        "/elections/state",
-		Summary:     "Get the current election state",
-		Tags:        []string{"Admin"},
-	}, handlers.GetElectionState(deps.Logger, deps.ElectionStore))
 
 	// huma.Register(adminRoutes, huma.Operation{
 	// 	OperationID: "admin-upload-members",
