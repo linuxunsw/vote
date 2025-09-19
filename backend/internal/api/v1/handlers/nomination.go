@@ -26,7 +26,7 @@ func SubmitNomination(logger *slog.Logger, st store.NominationStore, el store.El
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 		if election == nil {
-			logger.Warn("no current election when submitting OTP", "zid", candidateZid, "request_id", requestid.Get(ctx))
+			logger.Warn("no current election", "zid", candidateZid, "request_id", requestid.Get(ctx))
 			return nil, huma.Error400BadRequest("no election is currently running")
 		}
 
@@ -54,7 +54,7 @@ func GetNomination(logger *slog.Logger, st store.NominationStore, el store.Elect
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 		if election == nil {
-			logger.Warn("no current election when submitting OTP", "zid", candidateZid, "request_id", requestid.Get(ctx))
+			logger.Warn("no current election", "zid", candidateZid, "request_id", requestid.Get(ctx))
 			return nil, huma.Error400BadRequest("no election is currently running")
 		}
 
@@ -67,5 +67,33 @@ func GetNomination(logger *slog.Logger, st store.NominationStore, el store.Elect
 			return nil, huma.Error404NotFound("nomination not found")
 		}
 		return &models.GetNominationResponse{Body: *nomination}, nil
+	}
+}
+
+func DeleteNomination(logger *slog.Logger, st store.NominationStore, el store.ElectionStore) func(ctx context.Context, input *struct{}) (*struct{}, error) {
+	return func(ctx context.Context, input *struct{}) (*struct{}, error) {
+		claims, valid := middleware.GetUser(ctx)
+		if !valid {
+			logger.Warn("unauthenticated user tried to delete nomination", "request_id", requestid.Get(ctx))
+			return nil, huma.Error401Unauthorized("invalid user")
+		}
+
+		candidateZid := claims.ZID
+		election, err := el.CurrentElection(ctx)
+		if err != nil {
+			logger.Error("failed to get current election", "error", err, "request_id", requestid.Get(ctx))
+			return nil, huma.Error500InternalServerError("internal error")
+		}
+		if election == nil {
+			logger.Warn("no current election", "zid", candidateZid, "request_id", requestid.Get(ctx))
+			return nil, huma.Error400BadRequest("no election is currently running")
+		}
+
+		err = st.TryDeleteNomination(ctx, election.ElectionID, candidateZid)
+		if err != nil {
+			logger.Error("failed to delete nomination", "error", err, "zid", candidateZid, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
+			return nil, huma.Error500InternalServerError("internal error")
+		}
+		return &struct{}{}, nil
 	}
 }

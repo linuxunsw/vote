@@ -33,4 +33,7 @@ type NominationStore interface {
 
 	// Get a nomination by election ID and candidate zID. Returns nil if not found.
 	GetNomination(ctx context.Context, electionID string, candidateZid string) (*Nomination, error)
+
+	// Delete a nomination by election ID and candidate zID. Does nothing if the nomination doesn't exist.
+	TryDeleteNomination(ctx context.Context, electionID string, candidateZid string) error
 }

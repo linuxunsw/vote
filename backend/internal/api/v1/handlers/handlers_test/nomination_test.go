@@ -78,4 +78,13 @@ func TestNominationSubmit(t *testing.T) {
 	if err := compareStructs(nominationResp, outputNom); err != nil {
 		t.Fatal(err)
 	}
+
+	resp = api.Delete("/api/v1/nomination", cookie)
+	if resp.Code != 204 {
+		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	}
+	resp = api.Delete("/api/v1/nomination", cookie)
+	if resp.Code != 204 {
+		t.Fatalf("expected 204 Not Found, got %d", resp.Code)
+	}
 }

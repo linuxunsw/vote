@@ -103,6 +103,15 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Tags:        []string{"Nominations"},
 	}, handlers.GetNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
 
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "delete-nomination",
+		Method:      http.MethodDelete,
+		Path:        "/nomination",
+		Summary:     "Delete self-nomination",
+		Description: "Deletes an existing self-nomination for the current election. If an election is running, this route will always return as it succeeded even if a nomination did not exist.",
+		Tags:        []string{"Nominations"},
+	}, handlers.DeleteNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
+	
 	// huma.Register(userRoutes, huma.Operation{
 	// 	OperationID: "get-ballot",
 	// 	Method:      "GET",
