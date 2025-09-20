@@ -1,5 +1,6 @@
 <script lang="ts">
   import ClosedState from "./ClosedState.svelte";
+  import InterimState from "./InterimState.svelte";
   import NominationState from "./NominationState.svelte";
   import { State } from "./state.svelte";
 
@@ -15,4 +16,14 @@
   />
 {:else if state.state === "NOMINATIONS_OPEN"}
   <NominationState nomination={data.nomination} />
+{:else if state.state === "NOMINATIONS_CLOSED"}
+  <InterimState message="Nominations Closed! Voting will open shortly..." />
+{:else if state.state === "VOTING_OPEN"}
+  <!-- TODO -->
+{:else if state.state === "VOTING_CLOSED"}
+  <InterimState message="Waiting on results... Hang tight!" />
+{:else if state.state === "RESULTS"}
+  <!-- TODO -->
+{:else if state.state === "END"}
+  <!-- TODO -->
 {/if}
