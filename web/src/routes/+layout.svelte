@@ -1,8 +1,11 @@
 <script lang="ts">
   import "../app.css";
+  import SEO from "$lib/components/SEO.svelte";
 
   let { children } = $props();
 </script>
+
+<SEO title="LinSoc Vote" />
 
 <div class="flex min-h-screen flex-col">
   <header class="bg-yellow-500 p-4 font-bold">Vote</header>
