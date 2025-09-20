@@ -7,7 +7,7 @@
   let { message, imageSrc }: Props = $props();
 </script>
 
-<div class="mx-auto grid h-full md:max-w-2/3">
+<div class="grid h-full">
   <div class="space-y-2 place-self-center text-center">
     <img alt="funny penguin" class="mx-auto max-w-1/2" src={imageSrc} />
     <h2 class="text-2xl font-bold">{message}</h2>
