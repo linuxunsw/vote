@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { generateOtp } from "$lib/api";
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Card from "$lib/components/ui/card";
   import Input from "$lib/components/ui/input/input.svelte";
@@ -17,11 +18,14 @@
   let zidError = $state<string | null>(null);
 
   async function handleSubmitZID() {
-    console.log("hit");
     zidError = null;
     try {
       ZID_VALIDATOR.parse(zid);
-      // TODO: Actual API stuff
+      const { error } = await generateOtp({ body: { zid } });
+      if (error) {
+        zidError = error.detail ?? "Invalid zID entered.";
+        return;
+      }
       onsuccess(zid);
     } catch (e) {
       if (e instanceof z.ZodError) {

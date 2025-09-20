@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { submitOtp, type SubmitOtpResponseBody } from "$lib/api";
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Card from "$lib/components/ui/card";
   import * as InputOTP from "$lib/components/ui/input-otp";
@@ -9,7 +10,7 @@
 
   type Props = {
     zid: string;
-    onsuccess: () => void;
+    onsuccess: (data: SubmitOtpResponseBody) => void;
     oncancel: () => void;
   };
 
@@ -22,8 +23,12 @@
     otpError = null;
     try {
       OTP_VALIDATOR.parse(otp);
-      // TODO: Actual API stuff
-      onsuccess();
+      const { data, error } = await submitOtp({ body: { zid, otp } });
+      if (error) {
+        otpError = error.detail ?? "Invalid OTP.";
+        return;
+      }
+      onsuccess(data);
     } catch (e) {
       if (e instanceof z.ZodError) {
         otpError = "Invalid OTP.";

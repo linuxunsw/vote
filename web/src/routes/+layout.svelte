@@ -3,8 +3,13 @@
   import { ModeWatcher } from "mode-watcher";
   import SEO from "$lib/components/SEO.svelte";
   import ModeToggle from "$lib/components/mode-toggle.svelte";
+  import { authState } from "$lib/stores.svelte";
 
   let { children } = $props();
+
+  $effect(() => {
+    authState.load();
+  });
 </script>
 
 <ModeWatcher />
