@@ -26,6 +26,7 @@ type HandlerDependencies struct {
 	OtpStore store.OTPStore
 	ElectionStore store.ElectionStore
 	NominationStore store.NominationStore
+	BallotStore store.BallotStore
 }
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
@@ -112,21 +113,30 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Tags:        []string{"Nominations"},
 	}, handlers.DeleteNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
 	
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "get-ballot",
-	// 	Method:      "GET",
-	// 	Path:        "/voting/ballot",
-	// 	Summary:     "Get the voting ballot",
-	// 	Tags:        []string{"Voting"},
-	// }, handlers.GetBallot(store))
-	//
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "submit-vote",
-	// 	Method:      "POST",
-	// 	Path:        "/voting/vote",
-	// 	Summary:     "Submit or update a vote",
-	// 	Tags:        []string{"Voting"},
-	// }, handlers.SubmitVote(store))
+	// voting
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-ballot",
+		Method:      "GET",
+		Path:        "/vote",
+		Summary:     "Get your voting ballot",
+		Tags:        []string{"Voting"},
+	}, handlers.GetBallot(deps.Logger, deps.BallotStore, deps.ElectionStore))
+	
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "submit-ballot",
+		Method:      "PUT",
+		Path:        "/vote",
+		Summary:     "Submit or update a voting ballot",
+		Tags:        []string{"Voting"},
+	}, handlers.SubmitBallot(deps.Logger, deps.BallotStore, deps.ElectionStore, deps.NominationStore))
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "delete-ballot",
+		Method:      "DELETE",
+		Path:        "/vote",
+		Summary:     "Delete your voting ballot",
+		Tags:        []string{"Voting"},
+	}, handlers.DeleteBallot(deps.Logger, deps.BallotStore, deps.ElectionStore))
 
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.

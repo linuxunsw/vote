@@ -18,6 +18,15 @@ type Nomination struct {
 	UpdatedAt          time.Time   `db:"updated_at" json:"updated_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
 }
 
+func (nom Nomination) IsRunningFor(role string) bool {
+	for _, r := range nom.ExecutiveRoles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
 type SubmitNomination struct {
 	CandidateName      string   `db:"candidate_name" json:"candidate_name" minLength:"2" maxLength:"100" example:"John Doe"`
 	ContactEmail       string   `db:"contact_email" json:"contact_email" format:"email" example:"john@example.com"`

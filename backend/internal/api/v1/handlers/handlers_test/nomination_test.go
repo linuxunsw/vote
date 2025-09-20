@@ -17,29 +17,8 @@ func TestNominationSubmit(t *testing.T) {
 		zid,
 	})
 
-	resp := api.Post("/api/v1/otp/generate", map[string]any{
-		"zid": zid,
-	})
-	// generate returns nothing, it goes to the mailer
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
-	}
-
-	code := mailer.MockRetrieveOTP(zid + "@unsw.edu.au")
-
-	resp = api.Post("/api/v1/otp/submit", map[string]any{
-		"zid": zid,
-		"otp": code,
-	})
-	if resp.Code != 200 {
-		t.Fatalf("expected 200 OK, got %d", resp.Code)
-	}
-
+	resp := generateOTPSubmit(t, api, mailer, zid)
 	res := resp.Result()
-	if res.Header.Get("Set-Cookie") == "" {
-		t.Fatalf("expected Set-Cookie header, got none")
-	}
-
 	cookie := extractCookieHeader(res.Header)
 	resp = api.Put("/api/v1/nomination", cookie, map[string]any{
 		"candidate_name":      "John Doe",
