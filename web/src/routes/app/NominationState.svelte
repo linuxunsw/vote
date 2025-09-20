@@ -1,6 +1,7 @@
 <script lang="ts">
-  import Button from "$lib/components/ui/button/button.svelte";
+  import { Button, buttonVariants } from "$lib/components/ui/button";
   import NominationForm from "./NominationForm.svelte";
+  import * as Popover from "$lib/components/ui/popover";
 
   function humanizeExecRole(role: string) {
     return {
@@ -65,7 +66,15 @@
 
     <div class="flex gap-2">
       <Button onclick={() => (editing = true)}>Edit Nomination</Button>
-      <Button variant="destructive">Revoke Nomination</Button>
+      <Popover.Root>
+        <Popover.Trigger class={buttonVariants({ variant: "outline" })}>
+          Revoke Nomination
+        </Popover.Trigger>
+        <Popover.Content class="w-fit space-y-1.5">
+          <p class="font-bold">Are you sure?</p>
+          <Button variant="destructive">Confirm Revocation</Button>
+        </Popover.Content>
+      </Popover.Root>
     </div>
   {:else}
     <Button onclick={() => (editing = true)}>Nominate Yourself!</Button>
