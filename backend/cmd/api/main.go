@@ -117,15 +117,17 @@ func main() {
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
 	electionStore := pg.NewPgElectionStore(pool)
 	nominationStore := pg.NewPgNominationStore(pool)
+	ballotStore := pg.NewPgBallotStore(pool)
 
 	deps := v1.HandlerDependencies{
-		Logger:        logger,
-		Cfg:           cfg,
-		Mailer:        mailer,
-		Checker:       health,
-		OtpStore:      otpStore,
-		ElectionStore: electionStore,
+		Logger:          logger,
+		Cfg:             cfg,
+		Mailer:          mailer,
+		Checker:         health,
+		OtpStore:        otpStore,
+		ElectionStore:   electionStore,
 		NominationStore: nominationStore,
+		BallotStore:     ballotStore,
 	}
 	v1.Register(api, deps)
 

@@ -59,10 +59,12 @@ func NewAPIWithNowProvider(t *testing.T, nowProvider func() time.Time) (humatest
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
 	electionStore := pg.NewPgElectionStore(pool)
 	nominationStore := pg.NewPgNominationStore(pool)
+	ballotStore := pg.NewPgBallotStore(pool)
 
 	otpStore.(*pg.PgOTPStore).NowProvider = nowProvider
 	electionStore.(*pg.PgElectionStore).NowProvider = nowProvider
 	nominationStore.(*pg.PgNominationStore).NowProvider = nowProvider
+	ballotStore.(*pg.PgBallotStore).NowProvider = nowProvider
 
 	stores := v1.HandlerDependencies{
 		Logger:          logger,
@@ -72,6 +74,7 @@ func NewAPIWithNowProvider(t *testing.T, nowProvider func() time.Time) (humatest
 		OtpStore:        otpStore,
 		ElectionStore:   electionStore,
 		NominationStore: nominationStore,
+		BallotStore:     ballotStore,
 	}
 
 	v1.Register(api, stores)

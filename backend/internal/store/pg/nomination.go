@@ -79,3 +79,11 @@ func (st *PgNominationStore) GetNomination(ctx context.Context, electionID strin
 
 	return &entry, nil
 }
+
+func (st *PgNominationStore) TryDeleteNomination(ctx context.Context, electionID string, candidateZid string) error {
+	_, err := st.pool.Exec(ctx, `
+		delete from nominations
+		where election_id = $1 and candidate_zid = $2
+	`, electionID, candidateZid)
+	return err
+}
