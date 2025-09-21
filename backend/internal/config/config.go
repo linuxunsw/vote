@@ -54,8 +54,10 @@ type OTPConfig struct {
 }
 
 type MailerConfig struct {
-	ResendAPIKey string
-	FromEmail    string
+	ResendAPIKey  string
+	FromEmail     string
+	// sets whether the development console "mailer" should be used (logs to console)
+	ConsoleMailer bool
 }
 
 type LoggerConfig struct {
@@ -116,8 +118,9 @@ func Load() Config {
 			RatelimitWithin: time.Minute * 5,
 		},
 		Mailer: MailerConfig{
-			ResendAPIKey: GetString("RESEND_API_KEY", ""),
-			FromEmail:    GetString("MAILER_FROM_EMAIL", ""),
+			ResendAPIKey:  GetString("RESEND_API_KEY", ""),
+			FromEmail:     GetString("MAILER_FROM_EMAIL", ""),
+			ConsoleMailer: GetBool("CONSOLE_MAILER", true),
 		},
 		Logger: LoggerConfig{
 			Level:       GetString("LOGGER_LEVEL", "debug"),
