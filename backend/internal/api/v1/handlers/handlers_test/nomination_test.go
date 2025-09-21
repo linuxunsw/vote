@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
@@ -17,29 +18,8 @@ func TestNominationSubmit(t *testing.T) {
 		zid,
 	})
 
-	resp := api.Post("/api/v1/otp/generate", map[string]any{
-		"zid": zid,
-	})
-	// generate returns nothing, it goes to the mailer
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
-	}
-
-	code := mailer.MockRetrieveOTP(zid + "@unsw.edu.au")
-
-	resp = api.Post("/api/v1/otp/submit", map[string]any{
-		"zid": zid,
-		"otp": code,
-	})
-	if resp.Code != 200 {
-		t.Fatalf("expected 200 OK, got %d", resp.Code)
-	}
-
+	resp := generateOTPSubmit(t, api, mailer, zid)
 	res := resp.Result()
-	if res.Header.Get("Set-Cookie") == "" {
-		t.Fatalf("expected Set-Cookie header, got none")
-	}
-
 	cookie := extractCookieHeader(res.Header)
 	resp = api.Put("/api/v1/nomination", cookie, map[string]any{
 		"candidate_name":      "John Doe",
@@ -49,10 +29,12 @@ func TestNominationSubmit(t *testing.T) {
 		"candidate_statement": "Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50",
 		"url":                 nil,
 	})
-
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
+	respBody := models.SubmitNominationResponseBody{}
+	_ = json.Unmarshal(resp.Body.Bytes(), &respBody)
+	nominationId := respBody.NominationID
 
 	resp = api.Get("/api/v1/nomination", cookie)
 	if resp.Code != 200 {
@@ -63,6 +45,7 @@ func TestNominationSubmit(t *testing.T) {
 	_ = json.Unmarshal(resp.Body.Bytes(), &outputNom)
 
 	nominationResp := store.Nomination{
+		NominationId:       nominationId,
 		ElectionID:         electionId,
 		CandidateZID:       zid,
 		CandidateName:      "John Doe",
@@ -77,5 +60,45 @@ func TestNominationSubmit(t *testing.T) {
 
 	if err := compareStructs(nominationResp, outputNom); err != nil {
 		t.Fatal(err)
+	}
+
+	// now do public nomination
+	resp = api.Get("/api/v1/nomination/" + nominationId, cookie)
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
+	}
+	publicNom := models.PublicNomination{}
+	_ = json.Unmarshal(resp.Body.Bytes(), &publicNom)
+	expectedPublicNom := models.PublicNomination{
+		ElectionID:         electionId,
+		CandidateName:      "John Doe",
+		DiscordUsername:   "johndoe#1234",
+		ExecutiveRoles: []string{"president", "secretary"},
+		CandidateStatement: "Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50",
+		URL:                nil,
+		CreatedAt:          outputNom.CreatedAt,
+		UpdatedAt:          outputNom.UpdatedAt,
+	}
+	if err := compareStructs(expectedPublicNom, publicNom); err != nil {
+		t.Fatal(err)
+	}
+
+	resp = api.Delete("/api/v1/nomination", cookie)
+	if resp.Code != 204 {
+		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	}
+	resp = api.Delete("/api/v1/nomination", cookie)
+	if resp.Code != 204 {
+		t.Fatalf("expected 204 Not Found, got %d", resp.Code)
+	}
+
+	// check 404
+	resp = api.Get("/api/v1/nomination", cookie)
+	if resp.Code != 404 {
+		t.Fatalf("expected 404 Not Found, got %d", resp.Code)
+	}
+	resp = api.Get("/api/v1/nomination/" + nominationId, cookie)
+	if resp.Code != 404 {
+		t.Fatalf("expected 404 Not Found, got %d", resp.Code)
 	}
 }

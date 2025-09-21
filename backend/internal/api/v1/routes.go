@@ -7,13 +7,11 @@ import (
 	"github.com/alexliesenfeld/health"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/handlers"
 	"github.com/linuxunsw/vote/backend/internal/api/v1/middleware"
-	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/mailer"
 	"github.com/linuxunsw/vote/backend/internal/store"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/sse"
 )
 
 type HandlerDependencies struct {
@@ -28,6 +26,7 @@ type HandlerDependencies struct {
 	OtpStore store.OTPStore
 	ElectionStore store.ElectionStore
 	NominationStore store.NominationStore
+	BallotStore store.BallotStore
 }
 
 // Register mounts all the API v1 routes using Huma groups and middleware.
@@ -65,7 +64,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 	userRoutes.UseMiddleware(authMiddleware)
 
 	// state updates via SSE
-	sse.Register(userRoutes, huma.Operation{
+	/* sse.Register(userRoutes, huma.Operation{
 		OperationID: "state",
 		Method:      http.MethodGet,
 		Path:        "/state",
@@ -75,7 +74,16 @@ func Register(api huma.API, deps HandlerDependencies) {
 	}, map[string]any{
 		"stateChange": &models.StateChangeEvent{},
 	},
-		handlers.GetState(deps.Logger))
+		handlers.GetState(deps.Logger)) */
+
+	// election state
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-election-state",
+		Method:      "GET",
+		Path:        "/state",
+		Summary:     "Get the current election state",
+		Tags:        []string{"State"},
+	}, handlers.GetElectionState(deps.Logger, deps.ElectionStore))
 
 	// nomination
 	huma.Register(userRoutes, huma.Operation{
@@ -96,21 +104,56 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Tags:        []string{"Nominations"},
 	}, handlers.GetNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
 
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "get-ballot",
-	// 	Method:      "GET",
-	// 	Path:        "/voting/ballot",
-	// 	Summary:     "Get the voting ballot",
-	// 	Tags:        []string{"Voting"},
-	// }, handlers.GetBallot(store))
-	//
-	// huma.Register(userRoutes, huma.Operation{
-	// 	OperationID: "submit-vote",
-	// 	Method:      "POST",
-	// 	Path:        "/voting/vote",
-	// 	Summary:     "Submit or update a vote",
-	// 	Tags:        []string{"Voting"},
-	// }, handlers.SubmitVote(store))
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "delete-nomination",
+		Method:      http.MethodDelete,
+		Path:        "/nomination",
+		Summary:     "Delete self-nomination",
+		Description: "Deletes an existing self-nomination for the current election. If an election is running, this route will always return as it succeeded even if a nomination did not exist.",
+		Tags:        []string{"Nominations"},
+	}, handlers.DeleteNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-public-nomination",
+		Method:      "GET",
+		Path:        "/nomination/{nomination_id}",
+		Summary:     "Get a public nomination by ID",
+		Tags:        []string{"Nominations"},
+	}, handlers.GetPublicNomination(deps.Logger, deps.NominationStore))
+
+	// voting
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-vote",
+		Method:      "GET",
+		Path:        "/vote",
+		Summary:     "Get your current vote",
+		Tags:        []string{"Voting"},
+	}, handlers.GetVote(deps.Logger, deps.BallotStore, deps.ElectionStore))
+	
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "submit-vote",
+		Method:      "PUT",
+		Path:        "/vote",
+		Summary:     "Submit or update your current vote",
+		Tags:        []string{"Voting"},
+	}, handlers.SubmitVote(deps.Logger, deps.BallotStore, deps.ElectionStore, deps.NominationStore))
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "delete-vote",
+		Method:      "DELETE",
+		Path:        "/vote",
+		Summary:     "Delete your current vote",
+		Tags:        []string{"Voting"},
+	}, handlers.DeleteVote(deps.Logger, deps.BallotStore, deps.ElectionStore))
+
+	// ballot
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-ballot",
+		Method:      "GET",
+		Path:        "/ballot",
+		Summary:     "Get the current ballot",
+		Tags:        []string{"Voting"},
+	}, handlers.GetBallot(deps.Logger, deps.BallotStore, deps.ElectionStore, deps.NominationStore))
 
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.
@@ -136,18 +179,10 @@ func Register(api huma.API, deps HandlerDependencies) {
 	huma.Register(adminRoutes, huma.Operation{
 		OperationID: "admin-transition-election-state",
 		Method:      "PUT",
-		Path:        "/elections/state",
+		Path:        "/state",
 		Summary:     "Transition the election state",
 		Tags:        []string{"Admin"},
 	}, handlers.TransitionElectionState(deps.Logger, deps.ElectionStore))
-
-	huma.Register(adminRoutes, huma.Operation{
-		OperationID: "admin-get-election-state",
-		Method:      "GET",
-		Path:        "/elections/state",
-		Summary:     "Get the current election state",
-		Tags:        []string{"Admin"},
-	}, handlers.GetElectionState(deps.Logger, deps.ElectionStore))
 
 	// huma.Register(adminRoutes, huma.Operation{
 	// 	OperationID: "admin-upload-members",

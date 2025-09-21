@@ -6,16 +6,26 @@ import (
 )
 
 type Nomination struct {
-	ElectionID         string   `db:"election_id" json:"election_id" example:"1"`
-	CandidateZID       string   `db:"candidate_zid" json:"candidate_zid" example:"z1234567"`
-	CandidateName      string   `db:"candidate_name" json:"candidate_name" example:"John Doe"`
-	ContactEmail       string   `db:"contact_email" json:"contact_email" example:"john@example.com"`
-	DiscordUsername    string   `db:"discord_username" json:"discord_username" example:"johndoe"`
-	ExecutiveRoles     []string `db:"executive_roles" json:"executive_roles" example:"[\"president\", \"secretary\"]"`
-	CandidateStatement string   `db:"candidate_statement" json:"candidate_statement" example:"I am running for president because..."`
-	URL                *string  `db:"url" json:"url,omitempty" example:"https://johndoe.com"`
-	CreatedAt          time.Time   `db:"created_at" json:"created_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
-	UpdatedAt          time.Time   `db:"updated_at" json:"updated_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
+	NominationId       string    `db:"nomination_id" json:"nomination_id"`
+	ElectionID         string    `db:"election_id" json:"election_id"`
+	CandidateZID       string    `db:"candidate_zid" json:"candidate_zid" example:"z1234567"`
+	CandidateName      string    `db:"candidate_name" json:"candidate_name" example:"John Doe"`
+	ContactEmail       string    `db:"contact_email" json:"contact_email" example:"john@example.com"`
+	DiscordUsername    string    `db:"discord_username" json:"discord_username" example:"johndoe"`
+	ExecutiveRoles     []string  `db:"executive_roles" json:"executive_roles" example:"[\"president\", \"secretary\"]"`
+	CandidateStatement string    `db:"candidate_statement" json:"candidate_statement" example:"I am running for president because..."`
+	URL                *string   `db:"url" json:"url,omitempty" example:"https://johndoe.com"`
+	CreatedAt          time.Time `db:"created_at" json:"created_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt          time.Time `db:"updated_at" json:"updated_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
+}
+
+func (nom Nomination) IsRunningFor(role string) bool {
+	for _, r := range nom.ExecutiveRoles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }
 
 type SubmitNomination struct {
@@ -28,9 +38,18 @@ type SubmitNomination struct {
 }
 
 type NominationStore interface {
-	// Create or replace a new nomination.
-	SubmitOrReplaceNomination(ctx context.Context, electionID string, candidateZid string, submission SubmitNomination) error
+	// Create or replace a new nomination. Returns the public nomination ID.
+	SubmitOrReplaceNomination(ctx context.Context, electionID string, candidateZid string, submission SubmitNomination) (string, error)
 
 	// Get a nomination by election ID and candidate zID. Returns nil if not found.
-	GetNomination(ctx context.Context, electionID string, candidateZid string) (*Nomination, error)
+	GetNomination(ctx context.Context, electionId string, candidateZid string) (*Nomination, error)
+
+	// Get a nomination by the public nomination ID. Returns nil if not found.
+	GetNominationByPublicId(ctx context.Context, nominationId string) (*Nomination, error)
+
+	// Get all nominations for an election. Returns nil if not found.
+	GetElectionNominations(ctx context.Context, electionId string) ([]Nomination, error)
+
+	// Delete a nomination by election ID and candidate zID. Does nothing if the nomination doesn't exist.
+	TryDeleteNomination(ctx context.Context, electionId string, candidateZid string) error
 }

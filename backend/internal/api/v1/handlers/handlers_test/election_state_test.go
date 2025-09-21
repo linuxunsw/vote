@@ -96,7 +96,7 @@ func createElectionResp(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig
 func getCurrentElectionState(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, jwt string) models.GetElectionStateResponseBody {
 	adminCookie := fmt.Sprintf("Cookie: %s=%s", cfg.CookieName, jwt)
 
-	resp := api.Get("/api/v1/elections/state", adminCookie)
+	resp := api.Get("/api/v1/state", adminCookie)
 	if resp.Code != 200 {
 		t.Fatalf("expected 200 OK on get election, got %d", resp.Code)
 	}
@@ -113,7 +113,7 @@ func getCurrentElectionState(t *testing.T, api humatest.TestAPI, cfg config.JWTC
 func transitionElectionState(t *testing.T, api humatest.TestAPI, cfg config.JWTConfig, jwt string, newState string) int {
 	adminCookie := fmt.Sprintf("Cookie: %s=%s", cfg.CookieName, jwt)
 
-	resp := api.Put("/api/v1/elections/state", adminCookie, map[string]any{
+	resp := api.Put("/api/v1/state", adminCookie, map[string]any{
 		"state": newState,
 	})
 
