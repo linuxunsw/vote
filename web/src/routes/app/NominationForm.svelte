@@ -35,7 +35,7 @@
       discord_username: "",
       executive_roles: [],
       candidate_statement: "",
-      url: "",
+      url: undefined,
     },
     onsuccess,
     oncancel,
@@ -141,7 +141,10 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>URL (optional)</Form.Label>
-        <Input {...props} bind:value={$formData.url} />
+        <Input
+          {...props}
+          bind:value={() => $formData.url, (v) => ($formData.url = v?.length ? v : undefined)}
+        />
       {/snippet}
     </Form.Control>
     <Form.FieldErrors />

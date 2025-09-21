@@ -2,7 +2,7 @@
   import { Button, buttonVariants } from "$lib/components/ui/button";
   import NominationForm from "./NominationForm.svelte";
   import * as Popover from "$lib/components/ui/popover";
-  import type { Nomination } from "$lib/api";
+  import { deleteNomination, type Nomination } from "$lib/api";
   import { invalidateAll } from "$app/navigation";
 
   function humanizeExecRole(role: string) {
@@ -26,6 +26,11 @@
     await invalidateAll();
     editing = false;
   }
+
+  async function handleRevoke() {
+    await deleteNomination();
+    await invalidateAll();
+  }
 </script>
 
 {#if nomination}
@@ -36,33 +41,45 @@
 
 {#if !editing}
   {#if nomination}
-    <div class="grid grid-cols-1 gap-x-1.5 gap-y-1 md:grid-cols-[auto_1fr] md:gap-y-2">
-      <p class="font-bold md:text-right">Name</p>
-      <p class="mb-1.5 md:mb-0">{nomination.candidate_name}</p>
+    <div class="md:space-y-3">
+      <div class="space-y-1.5">
+        <p class="font-bold">Name</p>
+        <p>{nomination.candidate_name}</p>
+      </div>
 
-      <p class="font-bold md:text-right">Contact Email</p>
-      <a class="mb-1.5 text-blue-600 underline md:mb-0" href="mailto:{nomination.contact_email}">
-        {nomination.contact_email}
-      </a>
+      <div class="space-y-1.5">
+        <p class="font-bold">Contact Email</p>
+        <a class=" text-blue-600 underline" href="mailto:{nomination.contact_email}">
+          {nomination.contact_email}
+        </a>
+      </div>
 
-      <p class="font-bold md:text-right">Discord Username</p>
-      <p class="mb-1.5 md:mb-0">{nomination.discord_username}</p>
+      <div class="space-y-1.5">
+        <p class="font-bold">Discord Username</p>
+        <p class="">{nomination.discord_username}</p>
+      </div>
 
-      <p class="font-bold md:text-right">Nominated For</p>
-      <p class="mb-1.5 md:mb-0">
-        {(nomination.executive_roles ?? []).map(humanizeExecRole).join(", ")}
-      </p>
+      <div class="space-y-1.5">
+        <p class="font-bold">Nominated For</p>
+        <p class="">
+          {(nomination.executive_roles ?? []).map(humanizeExecRole).join(", ")}
+        </p>
+      </div>
 
-      <p class="font-bold md:text-right">Candidate Statement</p>
-      <p class="mb-1.5 md:mb-0">{nomination.candidate_statement}</p>
+      <div class="space-y-1.5">
+        <p class="font-bold">Candidate Statement</p>
+        <p class="">{nomination.candidate_statement}</p>
+      </div>
 
-      <p class="font-bold md:text-right">URL</p>
-      {#if nomination.url}
-        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-        <a class="mb-1.5 text-blue-600 underline md:mb-0" href={nomination.url}>{nomination.url}</a>
-      {:else}
-        <p class="mb-1.5 text-muted-foreground italic md:mb-0">(not provided)</p>
-      {/if}
+      <div class="space-y-1.5">
+        <p class="font-bold">URL</p>
+        {#if nomination.url}
+          <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+          <a class=" text-blue-600 underline" href={nomination.url}>{nomination.url}</a>
+        {:else}
+          <p class=" text-muted-foreground italic">(not provided)</p>
+        {/if}
+      </div>
     </div>
 
     <div class="flex gap-2">
@@ -73,7 +90,7 @@
         </Popover.Trigger>
         <Popover.Content class="w-fit space-y-1.5">
           <p class="font-bold">Are you sure?</p>
-          <Button variant="destructive">Confirm Revocation</Button>
+          <Button onclick={handleRevoke} variant="destructive">Confirm Revocation</Button>
         </Popover.Content>
       </Popover.Root>
     </div>

@@ -7,10 +7,9 @@ import type { PageLoad } from "./$types";
 export const prerender = false;
 export const ssr = false;
 
-export const load: PageLoad = async () => {
-  const { data, error: errorData } = await getNomination();
+export const load: PageLoad = async ({ fetch }) => {
+  const { data, error: errorData } = await getNomination({ fetch });
 
-  console.log(data, errorData);
   if (errorData) {
     const errorCode = Number(errorData.status);
     if (errorCode === 401) {
