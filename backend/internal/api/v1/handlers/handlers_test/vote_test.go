@@ -38,6 +38,9 @@ func TestVoteSubmit(t *testing.T) {
 	if resp.Code != 200 {
 		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
+	body0 := models.SubmitNominationResponseBody{}
+	_ = json.Unmarshal(resp.Body.Bytes(), &body0)
+	nominationId0 := body0.NominationID
 
 	res1 := generateOTPSubmit(t, api, mailer, zid1).Result()
 	cookie1 := extractCookieHeader(res1.Header)
@@ -47,8 +50,8 @@ func TestVoteSubmit(t *testing.T) {
 
 	resp = api.Put("/api/v1/vote", cookie1, map[string]any{
 		"positions": map[string]string{
-			"president":  zid0,
-			"secretary": zid0,
+			"president": nominationId0,
+			"secretary": nominationId0,
 		},
 	})
 	if resp.Code != 204 {
@@ -58,11 +61,11 @@ func TestVoteSubmit(t *testing.T) {
 	// test the time not being updated
 	now1 := time.Now().Truncate(time.Second)
 	*nowProvider = func() time.Time { return now1 }
-	
+
 	resp = api.Put("/api/v1/vote", cookie1, map[string]any{
 		"positions": map[string]string{
-			"president":  zid0,
-			"bogus": zid0,
+			"president": nominationId0,
+			"bogus":     nominationId0,
 		},
 	})
 	// HTTP/1.1 422 Unprocessable Entity
@@ -73,8 +76,8 @@ func TestVoteSubmit(t *testing.T) {
 
 	resp = api.Put("/api/v1/vote", cookie1, map[string]any{
 		"positions": map[string]string{
-			"president":  zid0,
-			"grievance_officer": zid0,
+			"president":         nominationId0,
+			"grievance_officer": nominationId0,
 		},
 	})
 	// HTTP/1.1 400 Bad Request
@@ -92,11 +95,11 @@ func TestVoteSubmit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected body, got error %v", err)
 	}
-	
+
 	unchangedResp := models.Vote{
 		Positions: map[string]string{
-			"president":  zid0,
-			"secretary": zid0,
+			"president": nominationId0,
+			"secretary": nominationId0,
 		},
 		CreatedAt: now0,
 		UpdatedAt: now0,
@@ -108,7 +111,7 @@ func TestVoteSubmit(t *testing.T) {
 	// now change the vote
 	resp = api.Put("/api/v1/vote", cookie1, map[string]any{
 		"positions": map[string]string{
-			"president":  zid0,
+			"president": nominationId0,
 			// allow putting no vote
 		},
 	})
@@ -126,7 +129,7 @@ func TestVoteSubmit(t *testing.T) {
 	}
 	changedResp := models.Vote{
 		Positions: map[string]string{
-			"president":  zid0,
+			"president": nominationId0,
 		},
 		CreatedAt: now0,
 		UpdatedAt: now1,

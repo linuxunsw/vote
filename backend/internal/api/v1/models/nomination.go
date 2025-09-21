@@ -51,7 +51,8 @@ type SubmitNominationResponseBody struct {
 
 // Public nominations don't have zID or contact email
 type PublicNomination struct {
-	ElectionID         string    `json:"election_id" example:"1"`
+	NominationId       string    `json:"nomination_id"`
+	ElectionID         string    `json:"election_id"`
 	CandidateName      string    `json:"candidate_name" example:"John Doe"`
 	DiscordUsername    string    `json:"discord_username" example:"johndoe"`
 	ExecutiveRoles     []string  `json:"executive_roles" example:"[\"president\", \"secretary\"]"`
@@ -63,6 +64,7 @@ type PublicNomination struct {
 
 func FromStoreNomination(nom store.Nomination) PublicNomination {
 	return PublicNomination{
+		NominationId:       nom.NominationId,
 		ElectionID:         nom.ElectionID,
 		CandidateName:      nom.CandidateName,
 		DiscordUsername:    nom.DiscordUsername,

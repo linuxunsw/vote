@@ -31,18 +31,18 @@ func SubmitVote(log *slog.Logger, st store.BallotStore, el store.ElectionStore, 
 
 		// the keys of input.Body.Positions have been validated
 		// the values have been validated for the correct zID format, but not if they are running 
-		for position, candidateZid := range input.Body.Positions {
-			nomination, err := nom.GetNomination(ctx, election.ElectionID, candidateZid)
+		for position, nominationId := range input.Body.Positions {
+			nomination, err := nom.GetNominationByPublicId(ctx, nominationId)
 			if err != nil {
-				log.Error("failed to get nomination", "error", err, "zid", candidateZid, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
+				log.Error("failed to get nomination", "error", err, "nomination_id", nominationId, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
 				return nil, huma.Error500InternalServerError("internal error")
 			}
 			if nomination == nil {
-				log.Warn("candidate is not running", "zid", candidateZid, "position", position, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
+				log.Warn("candidate is not running", "nomination_id", nominationId, "position", position, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
 				return nil, huma.Error400BadRequest("candidate is not running for position " + position)
 			}
 			if !nomination.IsRunningFor(position) {
-				log.Warn("candidate is not running for position", "zid", candidateZid, "position", position, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
+				log.Warn("candidate is not running for position", "nomination_id", nominationId, "position", position, "election_id", election.ElectionID, "request_id", requestid.Get(ctx))
 				return nil, huma.Error400BadRequest("candidate is not running for position " + position)
 			}
 		}
