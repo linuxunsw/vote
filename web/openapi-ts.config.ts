@@ -3,11 +3,15 @@ import { defineConfig } from "@hey-api/openapi-ts";
 export default defineConfig({
   input: "http://localhost:8888/openapi.yaml",
   output: {
-    path: "src/lib/api",
+    path: "src/lib/api/internal",
     format: "prettier",
     lint: "eslint",
   },
   plugins: [
+    {
+      name: "@hey-api/client-fetch",
+      runtimeConfigPath: "../config",
+    },
     "@hey-api/schemas",
     {
       dates: true,

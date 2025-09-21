@@ -2,6 +2,8 @@
   import { Button, buttonVariants } from "$lib/components/ui/button";
   import NominationForm from "./NominationForm.svelte";
   import * as Popover from "$lib/components/ui/popover";
+  import type { Nomination } from "$lib/api";
+  import { invalidateAll } from "$app/navigation";
 
   function humanizeExecRole(role: string) {
     return {
@@ -14,19 +16,16 @@
   }
 
   type Props = {
-    // TODO: make this a concrete type (probably from the codegen api)
-    nomination?: {
-      candidate_name: string;
-      candidate_statement: string;
-      contact_email: string;
-      discord_username: string;
-      executive_roles: string[];
-      url?: string;
-    };
+    nomination?: Nomination;
   };
 
   let { nomination }: Props = $props();
   let editing = $state(false);
+
+  async function handleSubmit() {
+    await invalidateAll();
+    editing = false;
+  }
 </script>
 
 {#if nomination}
@@ -50,7 +49,9 @@
       <p class="mb-1.5 md:mb-0">{nomination.discord_username}</p>
 
       <p class="font-bold md:text-right">Nominated For</p>
-      <p class="mb-1.5 md:mb-0">{nomination.executive_roles.map(humanizeExecRole).join(", ")}</p>
+      <p class="mb-1.5 md:mb-0">
+        {(nomination.executive_roles ?? []).map(humanizeExecRole).join(", ")}
+      </p>
 
       <p class="font-bold md:text-right">Candidate Statement</p>
       <p class="mb-1.5 md:mb-0">{nomination.candidate_statement}</p>
@@ -80,5 +81,6 @@
     <Button onclick={() => (editing = true)}>Nominate Yourself!</Button>
   {/if}
 {:else}
-  <NominationForm {nomination} onsuccess={() => {}} oncancel={() => (editing = false)} />
+  <!-- TODO: the api types... why... -->
+  <NominationForm {nomination} onsuccess={handleSubmit} oncancel={() => (editing = false)} />
 {/if}

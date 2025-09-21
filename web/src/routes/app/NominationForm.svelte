@@ -4,8 +4,14 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { Checkbox } from "$lib/components/ui/checkbox";
   import { defaults, superForm } from "sveltekit-superforms";
-  import { zod4Client, zodClient } from "sveltekit-superforms/adapters";
-  import { z } from "zod";
+  import { zod4Client } from "sveltekit-superforms/adapters";
+  import {
+    submitNomination,
+    zSubmitNominationWritable,
+    type SubmitNominationWritable,
+  } from "$lib/api";
+
+  const superFormsAdapter = zod4Client(zSubmitNominationWritable);
 
   const execRoleItems = [
     { id: "president", label: "President" },
@@ -16,49 +22,46 @@
     { id: "grievance_officer", label: "Grievance Officer" },
   ] as const;
 
-  const schema = z.object({
-    candidate_name: z.string().min(2),
-    contact_email: z.email(),
-    discord_username: z.string(),
-    executive_roles: z.array(z.string()),
-    candidate_statement: z.string(),
-    url: z.url().optional(),
-  });
-
   type Props = {
-    // TODO: make this a concrete type (probably from the codegen api)
-    nomination?: {
-      candidate_name: string;
-      candidate_statement: string;
-      contact_email: string;
-      discord_username: string;
-      executive_roles: string[];
-      url?: string;
-    };
-
+    nomination?: SubmitNominationWritable;
     onsuccess: () => void;
     oncancel: () => void;
   };
 
-  let { nomination, onsuccess, oncancel }: Props = $props();
+  let {
+    nomination = {
+      candidate_name: "",
+      contact_email: "",
+      discord_username: "",
+      executive_roles: [],
+      candidate_statement: "",
+      url: "",
+    },
+    onsuccess,
+    oncancel,
+  }: Props = $props();
 
-  const form = superForm(defaults(nomination, zod4Client(schema)), {
+  const form = superForm(defaults(nomination, superFormsAdapter), {
     SPA: true,
-    validators: zod4Client(schema),
-    onUpdate({ form }) {
+    validators: superFormsAdapter,
+    async onUpdate({ form }) {
       if (!form.valid) return;
-      // TODO
+      const { error } = await submitNomination({ body: form.data });
+      if (error) {
+        // TODO
+        return;
+      }
       onsuccess();
     },
   });
   const { form: formData, enhance } = form;
 
-  function addExecRole(id: string) {
-    $formData.executive_roles = [...$formData.executive_roles, id];
+  function addExecRole(id: NonNullable<SubmitNominationWritable["executive_roles"]>[number]) {
+    $formData.executive_roles = [...($formData.executive_roles ?? []), id];
   }
 
   function removeExecRole(id: string) {
-    $formData.executive_roles = $formData.executive_roles.filter((i) => i !== id);
+    $formData.executive_roles = ($formData.executive_roles ?? []).filter((i) => i !== id);
   }
 </script>
 
@@ -97,7 +100,7 @@
     <Form.Legend class="mb-1.5 text-sm">Nominating For</Form.Legend>
     <div class="space-y-2">
       {#each execRoleItems as item (item.id)}
-        {@const checked = $formData.executive_roles.includes(item.id)}
+        {@const checked = ($formData.executive_roles ?? []).includes(item.id)}
         <div class="flex flex-row items-start space-x-3">
           <Form.Control>
             {#snippet children({ props })}

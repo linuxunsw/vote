@@ -23,7 +23,7 @@
     otpError = null;
     try {
       OTP_VALIDATOR.parse(otp);
-      const { data, error } = await submitOtp({ body: { zid, otp } });
+      const { data, error } = await submitOtp({ body: { zid, otp }, credentials: "include" });
       if (error) {
         otpError = error.detail ?? "Invalid OTP.";
         return;
