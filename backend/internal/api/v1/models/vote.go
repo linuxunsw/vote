@@ -22,7 +22,7 @@ var validPositions = map[string]struct{}{
 }
 
 type SubmitVoteBody struct {
-	Positions map[string]string `json:"positions" example:"{\"president\":\"z1234567\",\"secretary\":\"z7654321\"}"`
+	Positions map[string]string `json:"positions" doc:"A map from categories to public nomination IDs. Find these by accessing your ballot." example:"{\"president\":\"01996ae6-31e5-7bc6-bac4-399ffc8c80de\",\"secretary\":\"01996ae6-31e5-7bc6-bac4-399ffc8c80de\"}"`
 }
 
 func (b *SubmitVoteInput) Resolve(ctx huma.Context) []error {
