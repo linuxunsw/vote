@@ -49,35 +49,35 @@
 
       <div class="space-y-1.5">
         <p class="font-bold">Contact Email</p>
-        <a class=" text-blue-600 underline" href="mailto:{nomination.contact_email}">
+        <a class="text-blue-600 underline" href="mailto:{nomination.contact_email}">
           {nomination.contact_email}
         </a>
       </div>
 
       <div class="space-y-1.5">
         <p class="font-bold">Discord Username</p>
-        <p class="">{nomination.discord_username}</p>
+        <p>{nomination.discord_username}</p>
       </div>
 
       <div class="space-y-1.5">
         <p class="font-bold">Nominated For</p>
-        <p class="">
+        <p>
           {(nomination.executive_roles ?? []).map(humanizeExecRole).join(", ")}
         </p>
       </div>
 
       <div class="space-y-1.5">
         <p class="font-bold">Candidate Statement</p>
-        <p class="">{nomination.candidate_statement}</p>
+        <p>{nomination.candidate_statement}</p>
       </div>
 
       <div class="space-y-1.5">
         <p class="font-bold">URL</p>
         {#if nomination.url}
           <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-          <a class=" text-blue-600 underline" href={nomination.url}>{nomination.url}</a>
+          <a class="text-blue-600 underline" href={nomination.url}>{nomination.url}</a>
         {:else}
-          <p class=" text-muted-foreground italic">(not provided)</p>
+          <p class="text-muted-foreground italic">(not provided)</p>
         {/if}
       </div>
     </div>
