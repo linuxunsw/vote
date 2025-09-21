@@ -35,8 +35,8 @@ func TestVoteSubmit(t *testing.T) {
 		"candidate_statement": "Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50",
 		"url":                 nil,
 	})
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
 
 	res1 := generateOTPSubmit(t, api, mailer, zid1).Result()
@@ -87,13 +87,13 @@ func TestVoteSubmit(t *testing.T) {
 	if resp.Code != 200 {
 		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
-	body := models.Ballot{}
+	body := models.Vote{}
 	err := json.Unmarshal(resp.Body.Bytes(), &body)
 	if err != nil {
 		t.Fatalf("expected body, got error %v", err)
 	}
 	
-	unchangedResp := models.Ballot{
+	unchangedResp := models.Vote{
 		Positions: map[string]string{
 			"president":  zid0,
 			"secretary": zid0,
@@ -119,12 +119,12 @@ func TestVoteSubmit(t *testing.T) {
 	if resp.Code != 200 {
 		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
-	body = models.Ballot{}
+	body = models.Vote{}
 	err = json.Unmarshal(resp.Body.Bytes(), &body)
 	if err != nil {
 		t.Fatalf("expected body, got error %v", err)
 	}
-	changedResp := models.Ballot{
+	changedResp := models.Vote{
 		Positions: map[string]string{
 			"president":  zid0,
 		},

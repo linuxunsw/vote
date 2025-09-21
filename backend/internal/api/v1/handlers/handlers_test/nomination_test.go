@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/linuxunsw/vote/backend/internal/api/v1/models"
 	"github.com/linuxunsw/vote/backend/internal/config"
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
@@ -28,10 +29,12 @@ func TestNominationSubmit(t *testing.T) {
 		"candidate_statement": "Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50",
 		"url":                 nil,
 	})
-
-	if resp.Code != 204 {
-		t.Fatalf("expected 204 OK, got %d", resp.Code)
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
 	}
+	respBody := models.SubmitNominationResponseBody{}
+	_ = json.Unmarshal(resp.Body.Bytes(), &respBody)
+	nominationId := respBody.NominationID
 
 	resp = api.Get("/api/v1/nomination", cookie)
 	if resp.Code != 200 {
@@ -42,6 +45,7 @@ func TestNominationSubmit(t *testing.T) {
 	_ = json.Unmarshal(resp.Body.Bytes(), &outputNom)
 
 	nominationResp := store.Nomination{
+		NominationId:       nominationId,
 		ElectionID:         electionId,
 		CandidateZID:       zid,
 		CandidateName:      "John Doe",
@@ -58,6 +62,27 @@ func TestNominationSubmit(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// now do public nomination
+	resp = api.Get("/api/v1/nomination/" + nominationId, cookie)
+	if resp.Code != 200 {
+		t.Fatalf("expected 200 OK, got %d", resp.Code)
+	}
+	publicNom := models.PublicNomination{}
+	_ = json.Unmarshal(resp.Body.Bytes(), &publicNom)
+	expectedPublicNom := models.PublicNomination{
+		ElectionID:         electionId,
+		CandidateName:      "John Doe",
+		DiscordUsername:   "johndoe#1234",
+		ExecutiveRoles: []string{"president", "secretary"},
+		CandidateStatement: "Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50Deez50",
+		URL:                nil,
+		CreatedAt:          outputNom.CreatedAt,
+		UpdatedAt:          outputNom.UpdatedAt,
+	}
+	if err := compareStructs(expectedPublicNom, publicNom); err != nil {
+		t.Fatal(err)
+	}
+
 	resp = api.Delete("/api/v1/nomination", cookie)
 	if resp.Code != 204 {
 		t.Fatalf("expected 204 OK, got %d", resp.Code)
@@ -65,5 +90,15 @@ func TestNominationSubmit(t *testing.T) {
 	resp = api.Delete("/api/v1/nomination", cookie)
 	if resp.Code != 204 {
 		t.Fatalf("expected 204 Not Found, got %d", resp.Code)
+	}
+
+	// check 404
+	resp = api.Get("/api/v1/nomination", cookie)
+	if resp.Code != 404 {
+		t.Fatalf("expected 404 Not Found, got %d", resp.Code)
+	}
+	resp = api.Get("/api/v1/nomination/" + nominationId, cookie)
+	if resp.Code != 404 {
+		t.Fatalf("expected 404 Not Found, got %d", resp.Code)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
@@ -14,6 +15,7 @@ type PgNominationStore struct {
 	pool PgxPoolIface
 
 	NowProvider func() time.Time
+	v7Provider  func() (uuid.UUID, error)
 }
 
 func NewPgNominationStore(pool PgxPoolIface) store.NominationStore {
@@ -21,14 +23,21 @@ func NewPgNominationStore(pool PgxPoolIface) store.NominationStore {
 		pool: pool,
 
 		NowProvider: time.Now,
+		v7Provider:  uuid.NewV7,
 	}
 }
 
-func (st *PgNominationStore) SubmitOrReplaceNomination(ctx context.Context, electionID string, candidateZid string, submission store.SubmitNomination) error {
+func (st *PgNominationStore) SubmitOrReplaceNomination(ctx context.Context, electionID string, candidateZid string, submission store.SubmitNomination) (string, error) {
 	now := st.NowProvider()
+	nominationId, err := st.v7Provider()
+	if err != nil {
+		return "", err
+	}
 
-	_, err := st.pool.Exec(ctx, `
+	_, err = st.pool.Exec(ctx, `
 		insert into nominations (
+			nomination_id,
+		
 			candidate_zid,
 			election_id,
 
@@ -42,7 +51,7 @@ func (st *PgNominationStore) SubmitOrReplaceNomination(ctx context.Context, elec
 
 			created_at,
 			updated_at
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+		) values ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
 		on conflict (candidate_zid, election_id) do update set
 			candidate_name = EXCLUDED.candidate_name,
 			contact_email = EXCLUDED.contact_email,
@@ -54,10 +63,14 @@ func (st *PgNominationStore) SubmitOrReplaceNomination(ctx context.Context, elec
 	`, candidateZid, electionID,
 		submission.CandidateName, submission.ContactEmail, submission.DiscordUsername,
 		submission.ExecutiveRoles, submission.CandidateStatement, submission.URL,
-		now,
+		now, nominationId,
 	)
 
-	return err
+	if err != nil {
+		return "", err
+	}
+
+	return nominationId.String(), nil
 }
 
 func (st *PgNominationStore) GetNomination(ctx context.Context, electionID string, candidateZid string) (*store.Nomination, error) {
@@ -78,6 +91,45 @@ func (st *PgNominationStore) GetNomination(ctx context.Context, electionID strin
 	}
 
 	return &entry, nil
+}
+
+func (st *PgNominationStore) GetNominationByPublicId(ctx context.Context, nominationId string) (*store.Nomination, error) {
+	rows, err := st.pool.Query(ctx, `
+		select * from nominations
+		where nomination_id = $1
+	`, nominationId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	entry, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[store.Nomination])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &entry, nil
+}
+
+func (st *PgNominationStore) GetElectionNominations(ctx context.Context, electionId string) ([]store.Nomination, error) {
+	rows, err := st.pool.Query(ctx, `
+		select * from nominations
+		where election_id = $1
+		order by created_at asc
+	`, electionId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := pgx.CollectRows(rows, pgx.RowToStructByName[store.Nomination])
+	if err != nil {
+		return nil, err
+	}
+
+	return entries, nil
 }
 
 func (st *PgNominationStore) TryDeleteNomination(ctx context.Context, electionID string, candidateZid string) error {

@@ -7,8 +7,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-type SubmitBallotInput struct {
-	Body SubmitBallotBody
+type SubmitVoteInput struct {
+	Body SubmitVoteBody
 }
 
 // president,secretary,treasurer,arc_delegate,edi_officer,grievance_officer
@@ -24,11 +24,11 @@ var validPositions = map[string]struct{}{
 
 var zIDRegex = regexp.MustCompile(`^z[0-9]{7}$`)
 
-type SubmitBallotBody struct {
+type SubmitVoteBody struct {
 	Positions map[string]string `json:"positions" example:"{\"president\":\"z1234567\",\"secretary\":\"z7654321\"}"`
 }
 
-func (b *SubmitBallotInput) Resolve(ctx huma.Context) []error {
+func (b *SubmitVoteInput) Resolve(ctx huma.Context) []error {
 	var errors []error
 
 	for position, zid := range b.Body.Positions {
@@ -51,11 +51,11 @@ func (b *SubmitBallotInput) Resolve(ctx huma.Context) []error {
 	return errors
 }
 
-type GetBallotResponse struct {
-	Body Ballot
+type GetVoteResponse struct {
+	Body Vote
 }
 
-type Ballot struct {
+type Vote struct {
 	Positions map[string]string `json:"positions" example:"{\"president\":\"z1234567\",\"secretary\":\"z7654321\"}"`
 	CreatedAt time.Time            `json:"created_at" format:"date-time" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt time.Time            `json:"updated_at" format:"date-time" example:"2024-01-15T10:30:00Z"`

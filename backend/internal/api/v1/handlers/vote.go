@@ -11,8 +11,8 @@ import (
 	"github.com/linuxunsw/vote/backend/internal/store"
 )
 
-func SubmitBallot(log *slog.Logger, st store.BallotStore, el store.ElectionStore, nom store.NominationStore) func(ctx context.Context, input *models.SubmitBallotInput) (*struct{}, error) {
-	return func(ctx context.Context, input *models.SubmitBallotInput) (*struct{}, error) {
+func SubmitVote(log *slog.Logger, st store.BallotStore, el store.ElectionStore, nom store.NominationStore) func(ctx context.Context, input *models.SubmitVoteInput) (*struct{}, error) {
+	return func(ctx context.Context, input *models.SubmitVoteInput) (*struct{}, error) {
 		claims, valid := middleware.GetUser(ctx)
 		if !valid {
 			log.Warn("unauthenticated user tried to submit vote", "request_id", requestid.Get(ctx))
@@ -58,8 +58,8 @@ func SubmitBallot(log *slog.Logger, st store.BallotStore, el store.ElectionStore
 	}
 }
 
-func GetBallot(log *slog.Logger, st store.BallotStore, el store.ElectionStore) func(ctx context.Context, input *struct {}) (*models.GetBallotResponse, error) {
-	return func(ctx context.Context, input *struct {}) (*models.GetBallotResponse, error) {
+func GetVote(log *slog.Logger, st store.BallotStore, el store.ElectionStore) func(ctx context.Context, input *struct {}) (*models.GetVoteResponse, error) {
+	return func(ctx context.Context, input *struct {}) (*models.GetVoteResponse, error) {
 		claims, valid := middleware.GetUser(ctx)
 		if !valid {
 			log.Warn("unauthenticated user tried to get ballot", "request_id", requestid.Get(ctx))
@@ -84,8 +84,8 @@ func GetBallot(log *slog.Logger, st store.BallotStore, el store.ElectionStore) f
 		if ballot == nil {
 			return nil, huma.Error404NotFound("no ballot found for user")
 		}
-		return &models.GetBallotResponse{
-			Body: models.Ballot{
+		return &models.GetVoteResponse{
+			Body: models.Vote{
 				Positions: ballot.Positions,
 				CreatedAt: ballot.CreatedAt,
 				UpdatedAt: ballot.UpdatedAt,
@@ -94,7 +94,7 @@ func GetBallot(log *slog.Logger, st store.BallotStore, el store.ElectionStore) f
 	}
 }
 
-func DeleteBallot(log *slog.Logger, st store.BallotStore, el store.ElectionStore) func(ctx context.Context, input *struct {}) (*struct{}, error) {
+func DeleteVote(log *slog.Logger, st store.BallotStore, el store.ElectionStore) func(ctx context.Context, input *struct {}) (*struct{}, error) {
 	return func(ctx context.Context, input *struct {}) (*struct{}, error) {
 		claims, valid := middleware.GetUser(ctx)
 		if !valid {

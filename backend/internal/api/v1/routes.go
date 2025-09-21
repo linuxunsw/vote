@@ -112,31 +112,48 @@ func Register(api huma.API, deps HandlerDependencies) {
 		Description: "Deletes an existing self-nomination for the current election. If an election is running, this route will always return as it succeeded even if a nomination did not exist.",
 		Tags:        []string{"Nominations"},
 	}, handlers.DeleteNomination(deps.Logger, deps.NominationStore, deps.ElectionStore))
-	
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-public-nomination",
+		Method:      "GET",
+		Path:        "/nomination/{nomination_id}",
+		Summary:     "Delete get a public nomination by ID",
+		Tags:        []string{"Nominations"},
+	}, handlers.GetPublicNomination(deps.Logger, deps.NominationStore))
+
 	// voting
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "get-vote",
+		Method:      "GET",
+		Path:        "/vote",
+		Summary:     "Get your current vote",
+		Tags:        []string{"Voting"},
+	}, handlers.GetVote(deps.Logger, deps.BallotStore, deps.ElectionStore))
+	
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "submit-vote",
+		Method:      "PUT",
+		Path:        "/vote",
+		Summary:     "Submit or update your current vote",
+		Tags:        []string{"Voting"},
+	}, handlers.SubmitVote(deps.Logger, deps.BallotStore, deps.ElectionStore, deps.NominationStore))
+
+	huma.Register(userRoutes, huma.Operation{
+		OperationID: "delete-vote",
+		Method:      "DELETE",
+		Path:        "/vote",
+		Summary:     "Delete your current vote",
+		Tags:        []string{"Voting"},
+	}, handlers.DeleteVote(deps.Logger, deps.BallotStore, deps.ElectionStore))
+
+	// ballot
 	huma.Register(userRoutes, huma.Operation{
 		OperationID: "get-ballot",
 		Method:      "GET",
-		Path:        "/vote",
-		Summary:     "Get your voting ballot",
+		Path:        "/ballot",
+		Summary:     "Get the current ballot",
 		Tags:        []string{"Voting"},
-	}, handlers.GetBallot(deps.Logger, deps.BallotStore, deps.ElectionStore))
-	
-	huma.Register(userRoutes, huma.Operation{
-		OperationID: "submit-ballot",
-		Method:      "PUT",
-		Path:        "/vote",
-		Summary:     "Submit or update a voting ballot",
-		Tags:        []string{"Voting"},
-	}, handlers.SubmitBallot(deps.Logger, deps.BallotStore, deps.ElectionStore, deps.NominationStore))
-
-	huma.Register(userRoutes, huma.Operation{
-		OperationID: "delete-ballot",
-		Method:      "DELETE",
-		Path:        "/vote",
-		Summary:     "Delete your voting ballot",
-		Tags:        []string{"Voting"},
-	}, handlers.DeleteBallot(deps.Logger, deps.BallotStore, deps.ElectionStore))
+	}, handlers.GetBallot(deps.Logger, deps.BallotStore, deps.ElectionStore, deps.NominationStore))
 
 	// == Admin Routes ==
 	// This group requires a valid JWT AND admin privileges.
