@@ -1,4 +1,4 @@
-import type { SubmitOtpResponseBody } from "./api/types.gen";
+import type { SubmitOtpResponseBody } from "./api";
 
 class PersistedState<T> {
   #key: string;

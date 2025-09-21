@@ -2,54 +2,76 @@
 
 import type { Options as ClientOptions, Client, TDataShape } from "./client";
 import type {
+  GetBallotData,
+  GetBallotResponses,
+  GetBallotErrors,
   CreateElectionData,
   CreateElectionResponses,
   CreateElectionErrors,
-  AdminGetElectionStateData,
-  AdminGetElectionStateResponses,
-  AdminGetElectionStateErrors,
-  AdminTransitionElectionStateData,
-  AdminTransitionElectionStateResponses,
-  AdminTransitionElectionStateErrors,
   SetElectionMembersData,
   SetElectionMembersResponses,
   SetElectionMembersErrors,
+  DeleteNominationData,
+  DeleteNominationResponses,
+  DeleteNominationErrors,
   GetNominationData,
   GetNominationResponses,
   GetNominationErrors,
   SubmitNominationData,
   SubmitNominationResponses,
   SubmitNominationErrors,
+  GetPublicNominationData,
+  GetPublicNominationResponses,
+  GetPublicNominationErrors,
   GenerateOtpData,
   GenerateOtpResponses,
   GenerateOtpErrors,
   SubmitOtpData,
   SubmitOtpResponses,
   SubmitOtpErrors,
-  StateData,
-  StateResponses,
-  StateErrors,
+  GetElectionStateData,
+  GetElectionStateResponses,
+  GetElectionStateErrors,
+  AdminTransitionElectionStateData,
+  AdminTransitionElectionStateResponses,
+  AdminTransitionElectionStateErrors,
+  DeleteVoteData,
+  DeleteVoteResponses,
+  DeleteVoteErrors,
+  GetVoteData,
+  GetVoteResponses,
+  GetVoteErrors,
+  SubmitVoteData,
+  SubmitVoteResponses,
+  SubmitVoteErrors,
   GetHealthData,
   GetHealthResponses,
   GetHealthErrors,
 } from "./types.gen";
 import {
+  zGetBallotData,
   zCreateElectionData,
-  zAdminGetElectionStateData,
-  zAdminTransitionElectionStateData,
   zSetElectionMembersData,
+  zDeleteNominationData,
   zGetNominationData,
   zSubmitNominationData,
+  zGetPublicNominationData,
   zGenerateOtpData,
   zSubmitOtpData,
-  zStateData,
+  zGetElectionStateData,
+  zAdminTransitionElectionStateData,
+  zDeleteVoteData,
+  zGetVoteData,
+  zSubmitVoteData,
   zGetHealthData,
 } from "./zod.gen";
 import { client } from "./client.gen";
 import {
-  adminGetElectionStateResponseTransformer,
   getNominationResponseTransformer,
+  getPublicNominationResponseTransformer,
   submitOtpResponseTransformer,
+  getElectionStateResponseTransformer,
+  getVoteResponseTransformer,
   getHealthResponseTransformer,
 } from "./transformers.gen";
 
@@ -68,6 +90,28 @@ export type Options<
    * used to access values that aren't defined as part of the SDK function.
    */
   meta?: Record<string, unknown>;
+};
+
+/**
+ * Get the current ballot
+ */
+export const getBallot = <ThrowOnError extends boolean = false>(
+  options?: Options<GetBallotData, ThrowOnError>,
+) => {
+  return (options?.client ?? client).get<GetBallotResponses, GetBallotErrors, ThrowOnError>({
+    requestValidator: async (data) => {
+      return await zGetBallotData.parseAsync(data);
+    },
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/ballot",
+    ...options,
+  });
 };
 
 /**
@@ -92,63 +136,6 @@ export const createElection = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/v1/elections",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
-};
-
-/**
- * Get the current election state
- */
-export const adminGetElectionState = <ThrowOnError extends boolean = false>(
-  options?: Options<AdminGetElectionStateData, ThrowOnError>,
-) => {
-  return (options?.client ?? client).get<
-    AdminGetElectionStateResponses,
-    AdminGetElectionStateErrors,
-    ThrowOnError
-  >({
-    requestValidator: async (data) => {
-      return await zAdminGetElectionStateData.parseAsync(data);
-    },
-    responseTransformer: adminGetElectionStateResponseTransformer,
-    security: [
-      {
-        in: "cookie",
-        name: "SESSION",
-        type: "apiKey",
-      },
-    ],
-    url: "/api/v1/elections/state",
-    ...options,
-  });
-};
-
-/**
- * Transition the election state
- */
-export const adminTransitionElectionState = <ThrowOnError extends boolean = false>(
-  options: Options<AdminTransitionElectionStateData, ThrowOnError>,
-) => {
-  return (options.client ?? client).put<
-    AdminTransitionElectionStateResponses,
-    AdminTransitionElectionStateErrors,
-    ThrowOnError
-  >({
-    requestValidator: async (data) => {
-      return await zAdminTransitionElectionStateData.parseAsync(data);
-    },
-    security: [
-      {
-        in: "cookie",
-        name: "SESSION",
-        type: "apiKey",
-      },
-    ],
-    url: "/api/v1/elections/state",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -184,6 +171,33 @@ export const setElectionMembers = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Delete self-nomination
+ * Deletes an existing self-nomination for the current election. If an election is running, this route will always return as it succeeded even if a nomination did not exist.
+ */
+export const deleteNomination = <ThrowOnError extends boolean = false>(
+  options?: Options<DeleteNominationData, ThrowOnError>,
+) => {
+  return (options?.client ?? client).delete<
+    DeleteNominationResponses,
+    DeleteNominationErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) => {
+      return await zDeleteNominationData.parseAsync(data);
+    },
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/nomination",
+    ...options,
   });
 };
 
@@ -245,6 +259,33 @@ export const submitNomination = <ThrowOnError extends boolean = false>(
 };
 
 /**
+ * Get a public nomination by ID
+ */
+export const getPublicNomination = <ThrowOnError extends boolean = false>(
+  options: Options<GetPublicNominationData, ThrowOnError>,
+) => {
+  return (options.client ?? client).get<
+    GetPublicNominationResponses,
+    GetPublicNominationErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) => {
+      return await zGetPublicNominationData.parseAsync(data);
+    },
+    responseTransformer: getPublicNominationResponseTransformer,
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/nomination/{nomination_id}",
+    ...options,
+  });
+};
+
+/**
  * Generate an OTP code
  */
 export const generateOtp = <ThrowOnError extends boolean = false>(
@@ -284,15 +325,45 @@ export const submitOtp = <ThrowOnError extends boolean = false>(
 };
 
 /**
- * Get State (SSE)
- * Gets current election state changes as server sent events.
+ * Get the current election state
  */
-export const state = <ThrowOnError extends boolean = false>(
-  options?: Options<StateData, ThrowOnError>,
+export const getElectionState = <ThrowOnError extends boolean = false>(
+  options?: Options<GetElectionStateData, ThrowOnError>,
 ) => {
-  return (options?.client ?? client).sse.get<StateResponses, StateErrors, ThrowOnError>({
+  return (options?.client ?? client).get<
+    GetElectionStateResponses,
+    GetElectionStateErrors,
+    ThrowOnError
+  >({
     requestValidator: async (data) => {
-      return await zStateData.parseAsync(data);
+      return await zGetElectionStateData.parseAsync(data);
+    },
+    responseTransformer: getElectionStateResponseTransformer,
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/state",
+    ...options,
+  });
+};
+
+/**
+ * Transition the election state
+ */
+export const adminTransitionElectionState = <ThrowOnError extends boolean = false>(
+  options: Options<AdminTransitionElectionStateData, ThrowOnError>,
+) => {
+  return (options.client ?? client).put<
+    AdminTransitionElectionStateResponses,
+    AdminTransitionElectionStateErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) => {
+      return await zAdminTransitionElectionStateData.parseAsync(data);
     },
     security: [
       {
@@ -303,6 +374,81 @@ export const state = <ThrowOnError extends boolean = false>(
     ],
     url: "/api/v1/state",
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete your current vote
+ */
+export const deleteVote = <ThrowOnError extends boolean = false>(
+  options?: Options<DeleteVoteData, ThrowOnError>,
+) => {
+  return (options?.client ?? client).delete<DeleteVoteResponses, DeleteVoteErrors, ThrowOnError>({
+    requestValidator: async (data) => {
+      return await zDeleteVoteData.parseAsync(data);
+    },
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/vote",
+    ...options,
+  });
+};
+
+/**
+ * Get your current vote
+ */
+export const getVote = <ThrowOnError extends boolean = false>(
+  options?: Options<GetVoteData, ThrowOnError>,
+) => {
+  return (options?.client ?? client).get<GetVoteResponses, GetVoteErrors, ThrowOnError>({
+    requestValidator: async (data) => {
+      return await zGetVoteData.parseAsync(data);
+    },
+    responseTransformer: getVoteResponseTransformer,
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/vote",
+    ...options,
+  });
+};
+
+/**
+ * Submit or update your current vote
+ */
+export const submitVote = <ThrowOnError extends boolean = false>(
+  options: Options<SubmitVoteData, ThrowOnError>,
+) => {
+  return (options.client ?? client).put<SubmitVoteResponses, SubmitVoteErrors, ThrowOnError>({
+    requestValidator: async (data) => {
+      return await zSubmitVoteData.parseAsync(data);
+    },
+    security: [
+      {
+        in: "cookie",
+        name: "SESSION",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/v1/vote",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 };
 

@@ -276,7 +276,6 @@ export const NominationSchema = {
       type: "string",
     },
     election_id: {
-      examples: ["1"],
       type: "string",
     },
     executive_roles: {
@@ -285,6 +284,9 @@ export const NominationSchema = {
         type: "string",
       },
       type: ["array", "null"],
+    },
+    nomination_id: {
+      type: "string",
     },
     updated_at: {
       examples: ["2024-01-15T10:30:00Z"],
@@ -297,6 +299,7 @@ export const NominationSchema = {
     },
   },
   required: [
+    "nomination_id",
     "election_id",
     "candidate_zid",
     "candidate_name",
@@ -310,23 +313,106 @@ export const NominationSchema = {
   type: "object",
 } as const;
 
-export const StateChangeEventSchema = {
+export const PublicBallotSchema = {
   additionalProperties: false,
   properties: {
-    new_state: {
-      enum: [
-        "CLOSED",
-        "NOMINATIONS_OPEN",
-        "NOMINATIONS_CLOSED",
-        "VOTING_OPEN",
-        "VOTING_CLOSED",
-        "RESULTS",
-        "END",
+    $schema: {
+      description: "A URL to the JSON Schema for this object.",
+      examples: ["https://example.com/schemas/PublicBallot.json"],
+      format: "uri",
+      readOnly: true,
+      type: "string",
+    },
+    candidates: {
+      additionalProperties: {
+        items: {
+          $ref: "#/components/schemas/PublicNomination",
+        },
+        type: ["array", "null"],
+      },
+      description: "Map of executive role to list of candidates running for that role",
+      examples: [
+        {
+          president: [],
+          secretary: [],
+        },
       ],
+      type: "object",
+    },
+    election_id: {
+      description: "Election ID",
+      examples: ["1"],
+      type: "string",
+    },
+    has_voted: {
+      description: "Whether the current user has already voted in this election",
+      type: "boolean",
+    },
+  },
+  required: ["election_id", "candidates", "has_voted"],
+  type: "object",
+} as const;
+
+export const PublicNominationSchema = {
+  additionalProperties: false,
+  properties: {
+    $schema: {
+      description: "A URL to the JSON Schema for this object.",
+      examples: ["https://example.com/schemas/PublicNomination.json"],
+      format: "uri",
+      readOnly: true,
+      type: "string",
+    },
+    candidate_name: {
+      examples: ["John Doe"],
+      type: "string",
+    },
+    candidate_statement: {
+      examples: ["I am running for president because..."],
+      type: "string",
+    },
+    created_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+    discord_username: {
+      examples: ["johndoe"],
+      type: "string",
+    },
+    election_id: {
+      type: "string",
+    },
+    executive_roles: {
+      examples: [["president", "secretary"]],
+      items: {
+        type: "string",
+      },
+      type: ["array", "null"],
+    },
+    nomination_id: {
+      type: "string",
+    },
+    updated_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+    url: {
+      examples: ["https://johndoe.com"],
       type: "string",
     },
   },
-  required: ["new_state"],
+  required: [
+    "nomination_id",
+    "election_id",
+    "candidate_name",
+    "discord_username",
+    "executive_roles",
+    "candidate_statement",
+    "created_at",
+    "updated_at",
+  ],
   type: "object",
 } as const;
 
@@ -396,6 +482,26 @@ export const SubmitNominationSchema = {
   type: "object",
 } as const;
 
+export const SubmitNominationResponseBodySchema = {
+  additionalProperties: false,
+  properties: {
+    $schema: {
+      description: "A URL to the JSON Schema for this object.",
+      examples: ["https://example.com/schemas/SubmitNominationResponseBody.json"],
+      format: "uri",
+      readOnly: true,
+      type: "string",
+    },
+    nomination_id: {
+      description: "Public nomination ID",
+      examples: ["abc123"],
+      type: "string",
+    },
+  },
+  required: ["nomination_id"],
+  type: "object",
+} as const;
+
 export const SubmitOTPInputBodySchema = {
   additionalProperties: false,
   properties: {
@@ -454,6 +560,35 @@ export const SubmitOTPResponseBodySchema = {
   type: "object",
 } as const;
 
+export const SubmitVoteBodySchema = {
+  additionalProperties: false,
+  properties: {
+    $schema: {
+      description: "A URL to the JSON Schema for this object.",
+      examples: ["https://example.com/schemas/SubmitVoteBody.json"],
+      format: "uri",
+      readOnly: true,
+      type: "string",
+    },
+    positions: {
+      additionalProperties: {
+        type: "string",
+      },
+      description:
+        "A map from categories to public nomination IDs. Find these by accessing your ballot.",
+      examples: [
+        {
+          president: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+          secretary: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+        },
+      ],
+      type: "object",
+    },
+  },
+  required: ["positions"],
+  type: "object",
+} as const;
+
 export const TransitionElectionStateBodySchema = {
   additionalProperties: false,
   properties: {
@@ -479,6 +614,45 @@ export const TransitionElectionStateBodySchema = {
     },
   },
   required: ["state"],
+  type: "object",
+} as const;
+
+export const VoteSchema = {
+  additionalProperties: false,
+  properties: {
+    $schema: {
+      description: "A URL to the JSON Schema for this object.",
+      examples: ["https://example.com/schemas/Vote.json"],
+      format: "uri",
+      readOnly: true,
+      type: "string",
+    },
+    created_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+    positions: {
+      additionalProperties: {
+        type: "string",
+      },
+      description:
+        "A map from categories to public nomination IDs. Find these by accessing your ballot.",
+      examples: [
+        {
+          president: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+          secretary: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+        },
+      ],
+      type: "object",
+    },
+    updated_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+  },
+  required: ["positions", "created_at", "updated_at"],
   type: "object",
 } as const;
 
@@ -668,7 +842,6 @@ export const NominationWritableSchema = {
       type: "string",
     },
     election_id: {
-      examples: ["1"],
       type: "string",
     },
     executive_roles: {
@@ -677,6 +850,9 @@ export const NominationWritableSchema = {
         type: "string",
       },
       type: ["array", "null"],
+    },
+    nomination_id: {
+      type: "string",
     },
     updated_at: {
       examples: ["2024-01-15T10:30:00Z"],
@@ -689,10 +865,100 @@ export const NominationWritableSchema = {
     },
   },
   required: [
+    "nomination_id",
     "election_id",
     "candidate_zid",
     "candidate_name",
     "contact_email",
+    "discord_username",
+    "executive_roles",
+    "candidate_statement",
+    "created_at",
+    "updated_at",
+  ],
+  type: "object",
+} as const;
+
+export const PublicBallotWritableSchema = {
+  additionalProperties: false,
+  properties: {
+    candidates: {
+      additionalProperties: {
+        items: {
+          $ref: "#/components/schemas/PublicNominationWritable",
+        },
+        type: ["array", "null"],
+      },
+      description: "Map of executive role to list of candidates running for that role",
+      examples: [
+        {
+          president: [],
+          secretary: [],
+        },
+      ],
+      type: "object",
+    },
+    election_id: {
+      description: "Election ID",
+      examples: ["1"],
+      type: "string",
+    },
+    has_voted: {
+      description: "Whether the current user has already voted in this election",
+      type: "boolean",
+    },
+  },
+  required: ["election_id", "candidates", "has_voted"],
+  type: "object",
+} as const;
+
+export const PublicNominationWritableSchema = {
+  additionalProperties: false,
+  properties: {
+    candidate_name: {
+      examples: ["John Doe"],
+      type: "string",
+    },
+    candidate_statement: {
+      examples: ["I am running for president because..."],
+      type: "string",
+    },
+    created_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+    discord_username: {
+      examples: ["johndoe"],
+      type: "string",
+    },
+    election_id: {
+      type: "string",
+    },
+    executive_roles: {
+      examples: [["president", "secretary"]],
+      items: {
+        type: "string",
+      },
+      type: ["array", "null"],
+    },
+    nomination_id: {
+      type: "string",
+    },
+    updated_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+    url: {
+      examples: ["https://johndoe.com"],
+      type: "string",
+    },
+  },
+  required: [
+    "nomination_id",
+    "election_id",
+    "candidate_name",
     "discord_username",
     "executive_roles",
     "candidate_statement",
@@ -761,6 +1027,19 @@ export const SubmitNominationWritableSchema = {
   type: "object",
 } as const;
 
+export const SubmitNominationResponseBodyWritableSchema = {
+  additionalProperties: false,
+  properties: {
+    nomination_id: {
+      description: "Public nomination ID",
+      examples: ["abc123"],
+      type: "string",
+    },
+  },
+  required: ["nomination_id"],
+  type: "object",
+} as const;
+
 export const SubmitOTPInputBodyWritableSchema = {
   additionalProperties: false,
   properties: {
@@ -805,6 +1084,28 @@ export const SubmitOTPResponseBodyWritableSchema = {
   type: "object",
 } as const;
 
+export const SubmitVoteBodyWritableSchema = {
+  additionalProperties: false,
+  properties: {
+    positions: {
+      additionalProperties: {
+        type: "string",
+      },
+      description:
+        "A map from categories to public nomination IDs. Find these by accessing your ballot.",
+      examples: [
+        {
+          president: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+          secretary: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+        },
+      ],
+      type: "object",
+    },
+  },
+  required: ["positions"],
+  type: "object",
+} as const;
+
 export const TransitionElectionStateBodyWritableSchema = {
   additionalProperties: false,
   properties: {
@@ -823,5 +1124,37 @@ export const TransitionElectionStateBodyWritableSchema = {
     },
   },
   required: ["state"],
+  type: "object",
+} as const;
+
+export const VoteWritableSchema = {
+  additionalProperties: false,
+  properties: {
+    created_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+    positions: {
+      additionalProperties: {
+        type: "string",
+      },
+      description:
+        "A map from categories to public nomination IDs. Find these by accessing your ballot.",
+      examples: [
+        {
+          president: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+          secretary: "01996ae6-31e5-7bc6-bac4-399ffc8c80de",
+        },
+      ],
+      type: "object",
+    },
+    updated_at: {
+      examples: ["2024-01-15T10:30:00Z"],
+      format: "date-time",
+      type: "string",
+    },
+  },
+  required: ["positions", "created_at", "updated_at"],
   type: "object",
 } as const;

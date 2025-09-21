@@ -148,19 +148,46 @@ export type Nomination = {
   discord_username: string;
   election_id: string;
   executive_roles: Array<string> | null;
+  nomination_id: string;
   updated_at: Date;
   url?: string;
 };
 
-export type StateChangeEvent = {
-  new_state:
-    | "CLOSED"
-    | "NOMINATIONS_OPEN"
-    | "NOMINATIONS_CLOSED"
-    | "VOTING_OPEN"
-    | "VOTING_CLOSED"
-    | "RESULTS"
-    | "END";
+export type PublicBallot = {
+  /**
+   * A URL to the JSON Schema for this object.
+   */
+  readonly $schema?: string;
+  /**
+   * Map of executive role to list of candidates running for that role
+   */
+  candidates: {
+    [key: string]: Array<PublicNomination> | null;
+  };
+  /**
+   * Election ID
+   */
+  election_id: string;
+  /**
+   * Whether the current user has already voted in this election
+   */
+  has_voted: boolean;
+};
+
+export type PublicNomination = {
+  /**
+   * A URL to the JSON Schema for this object.
+   */
+  readonly $schema?: string;
+  candidate_name: string;
+  candidate_statement: string;
+  created_at: Date;
+  discord_username: string;
+  election_id: string;
+  executive_roles: Array<string> | null;
+  nomination_id: string;
+  updated_at: Date;
+  url?: string;
 };
 
 export type SubmitNomination = {
@@ -176,6 +203,17 @@ export type SubmitNomination = {
     "president" | "secretary" | "treasurer" | "arc_delegate" | "edi_officer" | "grievance_officer"
   > | null;
   url?: string;
+};
+
+export type SubmitNominationResponseBody = {
+  /**
+   * A URL to the JSON Schema for this object.
+   */
+  readonly $schema?: string;
+  /**
+   * Public nomination ID
+   */
+  nomination_id: string;
 };
 
 export type SubmitOtpInputBody = {
@@ -212,6 +250,19 @@ export type SubmitOtpResponseBody = {
   zid: string;
 };
 
+export type SubmitVoteBody = {
+  /**
+   * A URL to the JSON Schema for this object.
+   */
+  readonly $schema?: string;
+  /**
+   * A map from categories to public nomination IDs. Find these by accessing your ballot.
+   */
+  positions: {
+    [key: string]: string;
+  };
+};
+
 export type TransitionElectionStateBody = {
   /**
    * A URL to the JSON Schema for this object.
@@ -228,6 +279,21 @@ export type TransitionElectionStateBody = {
     | "VOTING_CLOSED"
     | "RESULTS"
     | "END";
+};
+
+export type Vote = {
+  /**
+   * A URL to the JSON Schema for this object.
+   */
+  readonly $schema?: string;
+  created_at: Date;
+  /**
+   * A map from categories to public nomination IDs. Find these by accessing your ballot.
+   */
+  positions: {
+    [key: string]: string;
+  };
+  updated_at: Date;
 };
 
 export type CreateElectionInputBodyWritable = {
@@ -325,6 +391,36 @@ export type NominationWritable = {
   discord_username: string;
   election_id: string;
   executive_roles: Array<string> | null;
+  nomination_id: string;
+  updated_at: Date;
+  url?: string;
+};
+
+export type PublicBallotWritable = {
+  /**
+   * Map of executive role to list of candidates running for that role
+   */
+  candidates: {
+    [key: string]: Array<PublicNominationWritable> | null;
+  };
+  /**
+   * Election ID
+   */
+  election_id: string;
+  /**
+   * Whether the current user has already voted in this election
+   */
+  has_voted: boolean;
+};
+
+export type PublicNominationWritable = {
+  candidate_name: string;
+  candidate_statement: string;
+  created_at: Date;
+  discord_username: string;
+  election_id: string;
+  executive_roles: Array<string> | null;
+  nomination_id: string;
   updated_at: Date;
   url?: string;
 };
@@ -338,6 +434,13 @@ export type SubmitNominationWritable = {
     "president" | "secretary" | "treasurer" | "arc_delegate" | "edi_officer" | "grievance_officer"
   > | null;
   url?: string;
+};
+
+export type SubmitNominationResponseBodyWritable = {
+  /**
+   * Public nomination ID
+   */
+  nomination_id: string;
 };
 
 export type SubmitOtpInputBodyWritable = {
@@ -366,6 +469,15 @@ export type SubmitOtpResponseBodyWritable = {
   zid: string;
 };
 
+export type SubmitVoteBodyWritable = {
+  /**
+   * A map from categories to public nomination IDs. Find these by accessing your ballot.
+   */
+  positions: {
+    [key: string]: string;
+  };
+};
+
 export type TransitionElectionStateBodyWritable = {
   /**
    * State to transition to
@@ -379,6 +491,42 @@ export type TransitionElectionStateBodyWritable = {
     | "RESULTS"
     | "END";
 };
+
+export type VoteWritable = {
+  created_at: Date;
+  /**
+   * A map from categories to public nomination IDs. Find these by accessing your ballot.
+   */
+  positions: {
+    [key: string]: string;
+  };
+  updated_at: Date;
+};
+
+export type GetBallotData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/v1/ballot";
+};
+
+export type GetBallotErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type GetBallotError = GetBallotErrors[keyof GetBallotErrors];
+
+export type GetBallotResponses = {
+  /**
+   * OK
+   */
+  200: PublicBallot;
+};
+
+export type GetBallotResponse = GetBallotResponses[keyof GetBallotResponses];
 
 export type CreateElectionData = {
   body: CreateElectionInputBodyWritable;
@@ -404,60 +552,6 @@ export type CreateElectionResponses = {
 };
 
 export type CreateElectionResponse = CreateElectionResponses[keyof CreateElectionResponses];
-
-export type AdminGetElectionStateData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/api/v1/elections/state";
-};
-
-export type AdminGetElectionStateErrors = {
-  /**
-   * Error
-   */
-  default: ErrorModel;
-};
-
-export type AdminGetElectionStateError =
-  AdminGetElectionStateErrors[keyof AdminGetElectionStateErrors];
-
-export type AdminGetElectionStateResponses = {
-  /**
-   * OK
-   */
-  200: GetElectionStateResponseBody;
-};
-
-export type AdminGetElectionStateResponse =
-  AdminGetElectionStateResponses[keyof AdminGetElectionStateResponses];
-
-export type AdminTransitionElectionStateData = {
-  body: TransitionElectionStateBodyWritable;
-  path?: never;
-  query?: never;
-  url: "/api/v1/elections/state";
-};
-
-export type AdminTransitionElectionStateErrors = {
-  /**
-   * Error
-   */
-  default: ErrorModel;
-};
-
-export type AdminTransitionElectionStateError =
-  AdminTransitionElectionStateErrors[keyof AdminTransitionElectionStateErrors];
-
-export type AdminTransitionElectionStateResponses = {
-  /**
-   * No Content
-   */
-  204: void;
-};
-
-export type AdminTransitionElectionStateResponse =
-  AdminTransitionElectionStateResponses[keyof AdminTransitionElectionStateResponses];
 
 export type SetElectionMembersData = {
   body: ElectionMemberListSetInputBodyWritable;
@@ -489,6 +583,31 @@ export type SetElectionMembersResponses = {
 
 export type SetElectionMembersResponse =
   SetElectionMembersResponses[keyof SetElectionMembersResponses];
+
+export type DeleteNominationData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/v1/nomination";
+};
+
+export type DeleteNominationErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type DeleteNominationError = DeleteNominationErrors[keyof DeleteNominationErrors];
+
+export type DeleteNominationResponses = {
+  /**
+   * No Content
+   */
+  204: void;
+};
+
+export type DeleteNominationResponse = DeleteNominationResponses[keyof DeleteNominationResponses];
 
 export type GetNominationData = {
   body?: never;
@@ -533,12 +652,43 @@ export type SubmitNominationError = SubmitNominationErrors[keyof SubmitNominatio
 
 export type SubmitNominationResponses = {
   /**
-   * No Content
+   * OK
    */
-  204: void;
+  200: SubmitNominationResponseBody;
 };
 
 export type SubmitNominationResponse = SubmitNominationResponses[keyof SubmitNominationResponses];
+
+export type GetPublicNominationData = {
+  body?: never;
+  path: {
+    /**
+     * Public nomination ID
+     */
+    nomination_id: string;
+  };
+  query?: never;
+  url: "/api/v1/nomination/{nomination_id}";
+};
+
+export type GetPublicNominationErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type GetPublicNominationError = GetPublicNominationErrors[keyof GetPublicNominationErrors];
+
+export type GetPublicNominationResponses = {
+  /**
+   * OK
+   */
+  200: PublicNomination;
+};
+
+export type GetPublicNominationResponse =
+  GetPublicNominationResponses[keyof GetPublicNominationResponses];
 
 export type GenerateOtpData = {
   body: GenerateOtpInputBodyWritable;
@@ -590,45 +740,132 @@ export type SubmitOtpResponses = {
 
 export type SubmitOtpResponse = SubmitOtpResponses[keyof SubmitOtpResponses];
 
-export type StateData = {
+export type GetElectionStateData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/api/v1/state";
 };
 
-export type StateErrors = {
+export type GetElectionStateErrors = {
   /**
    * Error
    */
   default: ErrorModel;
 };
 
-export type StateError = StateErrors[keyof StateErrors];
+export type GetElectionStateError = GetElectionStateErrors[keyof GetElectionStateErrors];
 
-export type StateResponses = {
+export type GetElectionStateResponses = {
   /**
-   * Server Sent Events
-   * Each oneOf object in the array represents one possible Server Sent Events (SSE) message, serialized as UTF-8 text according to the SSE specification.
+   * OK
    */
-  200: Array<{
-    data: StateChangeEvent;
-    /**
-     * The event name.
-     */
-    event: "stateChange";
-    /**
-     * The event ID.
-     */
-    id?: number;
-    /**
-     * The retry time in milliseconds.
-     */
-    retry?: number;
-  }>;
+  200: GetElectionStateResponseBody;
 };
 
-export type StateResponse = StateResponses[keyof StateResponses];
+export type GetElectionStateResponse = GetElectionStateResponses[keyof GetElectionStateResponses];
+
+export type AdminTransitionElectionStateData = {
+  body: TransitionElectionStateBodyWritable;
+  path?: never;
+  query?: never;
+  url: "/api/v1/state";
+};
+
+export type AdminTransitionElectionStateErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type AdminTransitionElectionStateError =
+  AdminTransitionElectionStateErrors[keyof AdminTransitionElectionStateErrors];
+
+export type AdminTransitionElectionStateResponses = {
+  /**
+   * No Content
+   */
+  204: void;
+};
+
+export type AdminTransitionElectionStateResponse =
+  AdminTransitionElectionStateResponses[keyof AdminTransitionElectionStateResponses];
+
+export type DeleteVoteData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/v1/vote";
+};
+
+export type DeleteVoteErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type DeleteVoteError = DeleteVoteErrors[keyof DeleteVoteErrors];
+
+export type DeleteVoteResponses = {
+  /**
+   * No Content
+   */
+  204: void;
+};
+
+export type DeleteVoteResponse = DeleteVoteResponses[keyof DeleteVoteResponses];
+
+export type GetVoteData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/v1/vote";
+};
+
+export type GetVoteErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type GetVoteError = GetVoteErrors[keyof GetVoteErrors];
+
+export type GetVoteResponses = {
+  /**
+   * OK
+   */
+  200: Vote;
+};
+
+export type GetVoteResponse = GetVoteResponses[keyof GetVoteResponses];
+
+export type SubmitVoteData = {
+  body: SubmitVoteBodyWritable;
+  path?: never;
+  query?: never;
+  url: "/api/v1/vote";
+};
+
+export type SubmitVoteErrors = {
+  /**
+   * Error
+   */
+  default: ErrorModel;
+};
+
+export type SubmitVoteError = SubmitVoteErrors[keyof SubmitVoteErrors];
+
+export type SubmitVoteResponses = {
+  /**
+   * No Content
+   */
+  204: void;
+};
+
+export type SubmitVoteResponse = SubmitVoteResponses[keyof SubmitVoteResponses];
 
 export type GetHealthData = {
   body?: never;

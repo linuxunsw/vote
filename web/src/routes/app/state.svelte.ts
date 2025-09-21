@@ -1,12 +1,17 @@
-import { state, type StateChangeEvent } from "$lib/api";
+import { getElectionState, type GetElectionStateResponse } from "$lib/api";
 
 export class State {
-  state = $state<StateChangeEvent["new_state"] | null>(null);
+  state = $state<GetElectionStateResponse["state"] | null>(null);
 
   constructor() {
     $effect(() => {
-      // TODO: use liam's new state endpoint when it gets merged
-      this.state = "NOMINATIONS_OPEN";
+      getElectionState().then(({ data, error }) => {
+        if (data) this.state = data.state;
+        // TODO: better error display
+        if (error) throw error;
+      });
+
+      // TODO: SSE?
 
       // let generator: Awaited<ReturnType<typeof state>>["stream"];
       //
