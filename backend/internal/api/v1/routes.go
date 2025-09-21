@@ -34,7 +34,13 @@ func Register(api huma.API, deps HandlerDependencies) {
 	// Base group for all v1 routes
 	v1 := huma.NewGroup(api, "/api/v1")
 
-	huma.Get(api, "/health", handlers.GetHealth(deps.Checker))
+	huma.Register(api, huma.Operation{
+		OperationID: "get-health",
+		Method:      http.MethodGet,
+		Path:        "/health",
+		// This route wont show up in documentation
+		Hidden: true,
+	}, handlers.GetHealth(deps.Checker))
 
 	// deps for election state middleware
 	esDeps := middleware.RequireElectionStateDeps{
