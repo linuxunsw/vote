@@ -117,7 +117,7 @@ func Register(api huma.API, deps HandlerDependencies) {
 		OperationID: "get-public-nomination",
 		Method:      "GET",
 		Path:        "/nomination/{nomination_id}",
-		Summary:     "Delete a public nomination by ID",
+		Summary:     "Get a public nomination by ID",
 		Tags:        []string{"Nominations"},
 	}, handlers.GetPublicNomination(deps.Logger, deps.NominationStore))
 
