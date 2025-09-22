@@ -121,7 +121,7 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 				log.Warn("no current election when submitting OTP", "zid", input.Body.Zid, "request_id", requestid.Get(ctx))
 				return nil, huma.Error400BadRequest("no election is currently running")
 			}
-			
+
 			entry, err := el.GetMember(ctx, currentElection.ElectionID, input.Body.Zid)
 			if err != nil {
 				log.Error("failed to get election member", "error", err, "request_id", requestid.Get(ctx))
@@ -160,7 +160,6 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 		// serialise into a string
 		stringJWT := string(signed)
 
-		// FIXME TODO implement auth
 		return &models.SubmitOTPResponse{
 			SetCookie: http.Cookie{
 				Name:     cfg.CookieName,
@@ -173,8 +172,8 @@ func SubmitOTP(log *slog.Logger, st store.OTPStore, el store.ElectionStore, cfg 
 			},
 
 			Body: models.SubmitOTPResponseBody{
-				Zid: input.Body.Zid,
-				Expiry: tokenExpiry,
+				Zid:     input.Body.Zid,
+				Expiry:  tokenExpiry,
 				IsAdmin: isAdmin,
 			},
 		}, nil

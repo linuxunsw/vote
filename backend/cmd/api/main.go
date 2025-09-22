@@ -111,7 +111,12 @@ func main() {
 	}
 
 	// init mailer
-	mailer := mailer.NewResendMailer(cfg)
+	var mail mailer.Mailer
+	if cfg.Mailer.ConsoleMailer {
+		mail = mailer.NewConsoleMailer(logger)
+	} else {
+		mail = mailer.NewResendMailer(cfg)
+	}
 
 	// setup stores
 	otpStore := pg.NewPgOTPStore(pool, cfg.OTP)
@@ -122,7 +127,7 @@ func main() {
 	deps := v1.HandlerDependencies{
 		Logger:          logger,
 		Cfg:             cfg,
-		Mailer:          mailer,
+		Mailer:          mail,
 		Checker:         health,
 		OtpStore:        otpStore,
 		ElectionStore:   electionStore,
@@ -172,6 +177,7 @@ func main() {
 	cli.Run()
 }
 
+// FIXME: the healthcheck outputs when running this command
 func createOpenAPICommand(api huma.API) *cobra.Command {
 	return &cobra.Command{
 		Use:   "openapi",

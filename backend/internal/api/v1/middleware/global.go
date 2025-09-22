@@ -31,15 +31,6 @@ func humaGoMiddleware(middleware func(http.Handler) http.Handler) func(ctx huma.
 	}
 }
 
-// checks whether the debug header or the environment config is set
-func isLoggingBody(cfg config.LoggerConfig) func(r *http.Request) bool {
-	return func(r *http.Request) bool {
-		// the debug header allows for individual request debugging
-		debugHeaderSet := r.Header.Get(cfg.Debug.Header) == cfg.Debug.HeaderValue
-		return cfg.LogHTTPBody || debugHeaderSet
-	}
-}
-
 type GlobalMiddlewareOptions struct {
 	Logger          *slog.Logger
 	LogFormat       *httplog.Schema
