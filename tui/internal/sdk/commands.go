@@ -86,7 +86,7 @@ func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 			}
 		}
 
-		if resp.StatusCode() != http.StatusOK {
+		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
 			respID := resp.HTTPResponse.Header.Get("X-Request-ID")
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
@@ -145,7 +145,7 @@ func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
 				Error:      ErrUnauthorised,
 			}
 		}
-		if resp.StatusCode() != http.StatusNoContent {
+		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
 			return messages.ServerErrMsg{
