@@ -21,7 +21,7 @@ func Nomination() *huh.Form {
 			huh.NewInput().
 				Key("discord").
 				Title("discord username").
-				Validate(validation.NotEmpty),
+				Validate(huh.ValidateLength(2, 32)),
 			huh.NewMultiSelect[string]().
 				Key("roles").
 				Title("roles you are nominating for").
