@@ -20,14 +20,6 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/root"
 )
 
-// Runs the program locally
-func Local() {
-	p := tea.NewProgram(root.New("", ""), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		log.Fatal("TUI error:", err)
-	}
-}
-
 // Runs the program served via wish (SSH)
 func SSH(host string, port string) {
 	log := log.New(os.Stderr)
