@@ -1,8 +1,7 @@
 society: $ linux society
-event: 2025 agm nomination form
+event: 2025 annual general meeting
 
 tui:
-  local: false
   host: 0.0.0.0
   port: 2222
   server: server_url_here
