@@ -15,7 +15,6 @@ import (
 func main() {
 	loadConfig()
 
-	local := viper.GetBool("tui.local")
 	host := viper.GetString("tui.host")
 	port := viper.GetString("tui.port")
 
@@ -30,12 +29,7 @@ func main() {
 		}
 	}()
 
-	if !local {
-		tui.SSH(host, port)
-	} else {
-		tui.Local()
-	}
-
+	tui.SSH(host, port)
 }
 
 func loadConfig() {
@@ -45,7 +39,7 @@ func loadConfig() {
 	viper.SetDefault("tui.local", false)
 	viper.SetDefault("society", "$ linux society")
 	viper.SetDefault("event", "event name")
-	
+
 	// Config name, filetype and path
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")

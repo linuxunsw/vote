@@ -34,51 +34,36 @@ const (
 	GetElectionStateResponseBodyStateVOTINGOPEN        GetElectionStateResponseBodyState = "VOTING_OPEN"
 )
 
-// Defines values for HealthOutputHealthStatus.
+// Defines values for NominationExecutiveRoles.
 const (
-	Down    HealthOutputHealthStatus = "down"
-	Unknown HealthOutputHealthStatus = "unknown"
-	Up      HealthOutputHealthStatus = "up"
-)
-
-// Defines values for StateChangeEventNewState.
-const (
-	StateChangeEventNewStateCLOSED            StateChangeEventNewState = "CLOSED"
-	StateChangeEventNewStateEND               StateChangeEventNewState = "END"
-	StateChangeEventNewStateNOMINATIONSCLOSED StateChangeEventNewState = "NOMINATIONS_CLOSED"
-	StateChangeEventNewStateNOMINATIONSOPEN   StateChangeEventNewState = "NOMINATIONS_OPEN"
-	StateChangeEventNewStateRESULTS           StateChangeEventNewState = "RESULTS"
-	StateChangeEventNewStateVOTINGCLOSED      StateChangeEventNewState = "VOTING_CLOSED"
-	StateChangeEventNewStateVOTINGOPEN        StateChangeEventNewState = "VOTING_OPEN"
+	NominationExecutiveRolesArcDelegate      NominationExecutiveRoles = "arc_delegate"
+	NominationExecutiveRolesEdiOfficer       NominationExecutiveRoles = "edi_officer"
+	NominationExecutiveRolesGrievanceOfficer NominationExecutiveRoles = "grievance_officer"
+	NominationExecutiveRolesPresident        NominationExecutiveRoles = "president"
+	NominationExecutiveRolesSecretary        NominationExecutiveRoles = "secretary"
+	NominationExecutiveRolesTreasurer        NominationExecutiveRoles = "treasurer"
 )
 
 // Defines values for SubmitNominationExecutiveRoles.
 const (
-	ArcDelegate      SubmitNominationExecutiveRoles = "arc_delegate"
-	EdiOfficer       SubmitNominationExecutiveRoles = "edi_officer"
-	GrievanceOfficer SubmitNominationExecutiveRoles = "grievance_officer"
-	President        SubmitNominationExecutiveRoles = "president"
-	Secretary        SubmitNominationExecutiveRoles = "secretary"
-	Treasurer        SubmitNominationExecutiveRoles = "treasurer"
+	SubmitNominationExecutiveRolesArcDelegate      SubmitNominationExecutiveRoles = "arc_delegate"
+	SubmitNominationExecutiveRolesEdiOfficer       SubmitNominationExecutiveRoles = "edi_officer"
+	SubmitNominationExecutiveRolesGrievanceOfficer SubmitNominationExecutiveRoles = "grievance_officer"
+	SubmitNominationExecutiveRolesPresident        SubmitNominationExecutiveRoles = "president"
+	SubmitNominationExecutiveRolesSecretary        SubmitNominationExecutiveRoles = "secretary"
+	SubmitNominationExecutiveRolesTreasurer        SubmitNominationExecutiveRoles = "treasurer"
 )
 
 // Defines values for TransitionElectionStateBodyState.
 const (
-	CLOSED            TransitionElectionStateBodyState = "CLOSED"
-	END               TransitionElectionStateBodyState = "END"
-	NOMINATIONSCLOSED TransitionElectionStateBodyState = "NOMINATIONS_CLOSED"
-	NOMINATIONSOPEN   TransitionElectionStateBodyState = "NOMINATIONS_OPEN"
-	RESULTS           TransitionElectionStateBodyState = "RESULTS"
-	VOTINGCLOSED      TransitionElectionStateBodyState = "VOTING_CLOSED"
-	VOTINGOPEN        TransitionElectionStateBodyState = "VOTING_OPEN"
+	TransitionElectionStateBodyStateCLOSED            TransitionElectionStateBodyState = "CLOSED"
+	TransitionElectionStateBodyStateEND               TransitionElectionStateBodyState = "END"
+	TransitionElectionStateBodyStateNOMINATIONSCLOSED TransitionElectionStateBodyState = "NOMINATIONS_CLOSED"
+	TransitionElectionStateBodyStateNOMINATIONSOPEN   TransitionElectionStateBodyState = "NOMINATIONS_OPEN"
+	TransitionElectionStateBodyStateRESULTS           TransitionElectionStateBodyState = "RESULTS"
+	TransitionElectionStateBodyStateVOTINGCLOSED      TransitionElectionStateBodyState = "VOTING_CLOSED"
+	TransitionElectionStateBodyStateVOTINGOPEN        TransitionElectionStateBodyState = "VOTING_OPEN"
 )
-
-// CheckResult defines model for CheckResult.
-type CheckResult struct {
-	Error     interface{} `json:"error,omitempty"`
-	Status    string      `json:"status"`
-	Timestamp *time.Time  `json:"timestamp,omitempty"`
-}
 
 // CreateElectionInputBody defines model for CreateElectionInputBody.
 type CreateElectionInputBody struct {
@@ -168,42 +153,55 @@ type GetElectionStateResponseBody struct {
 // GetElectionStateResponseBodyState defines model for GetElectionStateResponseBody.State.
 type GetElectionStateResponseBodyState string
 
-// HealthOutput defines model for HealthOutput.
-type HealthOutput struct {
-	// Schema A URL to the JSON Schema for this object.
-	Schema       *string                  `json:"$schema,omitempty"`
-	Checked      time.Time                `json:"checked"`
-	Details      *map[string]CheckResult  `json:"details,omitempty"`
-	HealthStatus HealthOutputHealthStatus `json:"health_status"`
-	Info         *map[string]interface{}  `json:"info,omitempty"`
-}
-
-// HealthOutputHealthStatus defines model for HealthOutput.HealthStatus.
-type HealthOutputHealthStatus string
-
 // Nomination defines model for Nomination.
 type Nomination struct {
+	// Schema A URL to the JSON Schema for this object.
+	Schema             *string                     `json:"$schema,omitempty"`
+	CandidateName      string                      `json:"candidate_name"`
+	CandidateStatement string                      `json:"candidate_statement"`
+	CandidateZid       string                      `json:"candidate_zid"`
+	ContactEmail       string                      `json:"contact_email"`
+	CreatedAt          time.Time                   `json:"created_at"`
+	DiscordUsername    string                      `json:"discord_username"`
+	ElectionId         string                      `json:"election_id"`
+	ExecutiveRoles     *[]NominationExecutiveRoles `json:"executive_roles"`
+	NominationId       string                      `json:"nomination_id"`
+	UpdatedAt          time.Time                   `json:"updated_at"`
+	Url                *string                     `json:"url,omitempty"`
+}
+
+// NominationExecutiveRoles defines model for Nomination.ExecutiveRoles.
+type NominationExecutiveRoles string
+
+// PublicBallot defines model for PublicBallot.
+type PublicBallot struct {
+	// Schema A URL to the JSON Schema for this object.
+	Schema *string `json:"$schema,omitempty"`
+
+	// Candidates Map of executive role to list of candidates running for that role
+	Candidates map[string]*[]PublicNomination `json:"candidates"`
+
+	// ElectionId Election ID
+	ElectionId string `json:"election_id"`
+
+	// HasVoted Whether the current user has already voted in this election
+	HasVoted bool `json:"has_voted"`
+}
+
+// PublicNomination defines model for PublicNomination.
+type PublicNomination struct {
 	// Schema A URL to the JSON Schema for this object.
 	Schema             *string   `json:"$schema,omitempty"`
 	CandidateName      string    `json:"candidate_name"`
 	CandidateStatement string    `json:"candidate_statement"`
-	CandidateZid       string    `json:"candidate_zid"`
-	ContactEmail       string    `json:"contact_email"`
 	CreatedAt          time.Time `json:"created_at"`
 	DiscordUsername    string    `json:"discord_username"`
 	ElectionId         string    `json:"election_id"`
 	ExecutiveRoles     *[]string `json:"executive_roles"`
+	NominationId       string    `json:"nomination_id"`
 	UpdatedAt          time.Time `json:"updated_at"`
 	Url                *string   `json:"url,omitempty"`
 }
-
-// StateChangeEvent defines model for StateChangeEvent.
-type StateChangeEvent struct {
-	NewState StateChangeEventNewState `json:"new_state"`
-}
-
-// StateChangeEventNewState defines model for StateChangeEvent.NewState.
-type StateChangeEventNewState string
 
 // SubmitNomination defines model for SubmitNomination.
 type SubmitNomination struct {
@@ -219,6 +217,15 @@ type SubmitNomination struct {
 
 // SubmitNominationExecutiveRoles defines model for SubmitNomination.ExecutiveRoles.
 type SubmitNominationExecutiveRoles string
+
+// SubmitNominationResponseBody defines model for SubmitNominationResponseBody.
+type SubmitNominationResponseBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	Schema *string `json:"$schema,omitempty"`
+
+	// NominationId Public nomination ID
+	NominationId string `json:"nomination_id"`
+}
 
 // SubmitOTPInputBody defines model for SubmitOTPInputBody.
 type SubmitOTPInputBody struct {
@@ -247,6 +254,15 @@ type SubmitOTPResponseBody struct {
 	Zid string `json:"zid"`
 }
 
+// SubmitVoteBody defines model for SubmitVoteBody.
+type SubmitVoteBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	Schema *string `json:"$schema,omitempty"`
+
+	// Positions A map from categories to public nomination IDs. Find these by accessing your ballot.
+	Positions map[string]string `json:"positions"`
+}
+
 // TransitionElectionStateBody defines model for TransitionElectionStateBody.
 type TransitionElectionStateBody struct {
 	// Schema A URL to the JSON Schema for this object.
@@ -259,11 +275,19 @@ type TransitionElectionStateBody struct {
 // TransitionElectionStateBodyState State to transition to
 type TransitionElectionStateBodyState string
 
+// Vote defines model for Vote.
+type Vote struct {
+	// Schema A URL to the JSON Schema for this object.
+	Schema    *string   `json:"$schema,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// Positions A map from categories to public nomination IDs. Find these by accessing your ballot.
+	Positions map[string]string `json:"positions"`
+	UpdatedAt time.Time         `json:"updated_at"`
+}
+
 // CreateElectionJSONRequestBody defines body for CreateElection for application/json ContentType.
 type CreateElectionJSONRequestBody = CreateElectionInputBody
-
-// AdminTransitionElectionStateJSONRequestBody defines body for AdminTransitionElectionState for application/json ContentType.
-type AdminTransitionElectionStateJSONRequestBody = TransitionElectionStateBody
 
 // SetElectionMembersJSONRequestBody defines body for SetElectionMembers for application/json ContentType.
 type SetElectionMembersJSONRequestBody = ElectionMemberListSetInputBody
@@ -276,6 +300,12 @@ type GenerateOtpJSONRequestBody = GenerateOTPInputBody
 
 // SubmitOtpJSONRequestBody defines body for SubmitOtp for application/json ContentType.
 type SubmitOtpJSONRequestBody = SubmitOTPInputBody
+
+// AdminTransitionElectionStateJSONRequestBody defines body for AdminTransitionElectionState for application/json ContentType.
+type AdminTransitionElectionStateJSONRequestBody = TransitionElectionStateBody
+
+// SubmitVoteJSONRequestBody defines body for SubmitVote for application/json ContentType.
+type SubmitVoteJSONRequestBody = SubmitVoteBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -350,23 +380,21 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetBallot request
+	GetBallot(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreateElectionWithBody request with any body
 	CreateElectionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	CreateElection(ctx context.Context, body CreateElectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// AdminGetElectionState request
-	AdminGetElectionState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// AdminTransitionElectionStateWithBody request with any body
-	AdminTransitionElectionStateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	AdminTransitionElectionState(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// SetElectionMembersWithBody request with any body
 	SetElectionMembersWithBody(ctx context.Context, electionId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	SetElectionMembers(ctx context.Context, electionId string, body SetElectionMembersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNomination request
+	DeleteNomination(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetNomination request
 	GetNomination(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -375,6 +403,9 @@ type ClientInterface interface {
 	SubmitNominationWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	SubmitNomination(ctx context.Context, body SubmitNominationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPublicNomination request
+	GetPublicNomination(ctx context.Context, nominationId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GenerateOtpWithBody request with any body
 	GenerateOtpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -386,11 +417,36 @@ type ClientInterface interface {
 
 	SubmitOtp(ctx context.Context, body SubmitOtpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// State request
-	State(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetElectionState request
+	GetElectionState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetHealth request
-	GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// AdminTransitionElectionStateWithBody request with any body
+	AdminTransitionElectionStateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AdminTransitionElectionState(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteVote request
+	DeleteVote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetVote request
+	GetVote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SubmitVoteWithBody request with any body
+	SubmitVoteWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SubmitVote(ctx context.Context, body SubmitVoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetBallot(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetBallotRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) CreateElectionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -417,42 +473,6 @@ func (c *Client) CreateElection(ctx context.Context, body CreateElectionJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) AdminGetElectionState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAdminGetElectionStateRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) AdminTransitionElectionStateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAdminTransitionElectionStateRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) AdminTransitionElectionState(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAdminTransitionElectionStateRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) SetElectionMembersWithBody(ctx context.Context, electionId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetElectionMembersRequestWithBody(c.Server, electionId, contentType, body)
 	if err != nil {
@@ -467,6 +487,18 @@ func (c *Client) SetElectionMembersWithBody(ctx context.Context, electionId stri
 
 func (c *Client) SetElectionMembers(ctx context.Context, electionId string, body SetElectionMembersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetElectionMembersRequest(c.Server, electionId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteNomination(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNominationRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -503,6 +535,18 @@ func (c *Client) SubmitNominationWithBody(ctx context.Context, contentType strin
 
 func (c *Client) SubmitNomination(ctx context.Context, body SubmitNominationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSubmitNominationRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPublicNomination(ctx context.Context, nominationId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPublicNominationRequest(c.Server, nominationId)
 	if err != nil {
 		return nil, err
 	}
@@ -561,8 +605,8 @@ func (c *Client) SubmitOtp(ctx context.Context, body SubmitOtpJSONRequestBody, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) State(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewStateRequest(c.Server)
+func (c *Client) GetElectionState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetElectionStateRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -573,8 +617,8 @@ func (c *Client) State(ctx context.Context, reqEditors ...RequestEditorFn) (*htt
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetHealthRequest(c.Server)
+func (c *Client) AdminTransitionElectionStateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminTransitionElectionStateRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -583,6 +627,93 @@ func (c *Client) GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+func (c *Client) AdminTransitionElectionState(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdminTransitionElectionStateRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteVote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteVoteRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetVote(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVoteRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SubmitVoteWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSubmitVoteRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SubmitVote(ctx context.Context, body SubmitVoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSubmitVoteRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewGetBallotRequest generates requests for GetBallot
+func NewGetBallotRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/ballot")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewCreateElectionRequest calls the generic CreateElection builder with application/json body
@@ -616,73 +747,6 @@ func NewCreateElectionRequestWithBody(server string, contentType string, body io
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewAdminGetElectionStateRequest generates requests for AdminGetElectionState
-func NewAdminGetElectionStateRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/elections/state")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewAdminTransitionElectionStateRequest calls the generic AdminTransitionElectionState builder with application/json body
-func NewAdminTransitionElectionStateRequest(server string, body AdminTransitionElectionStateJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewAdminTransitionElectionStateRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewAdminTransitionElectionStateRequestWithBody generates requests for AdminTransitionElectionState with any type of body
-func NewAdminTransitionElectionStateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/elections/state")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -735,6 +799,33 @@ func NewSetElectionMembersRequestWithBody(server string, electionId string, cont
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteNominationRequest generates requests for DeleteNomination
+func NewDeleteNominationRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/nomination")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -802,6 +893,40 @@ func NewSubmitNominationRequestWithBody(server string, contentType string, body 
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetPublicNominationRequest generates requests for GetPublicNomination
+func NewGetPublicNominationRequest(server string, nominationId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "nomination_id", runtime.ParamLocationPath, nominationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/nomination/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -886,8 +1011,8 @@ func NewSubmitOtpRequestWithBody(server string, contentType string, body io.Read
 	return req, nil
 }
 
-// NewStateRequest generates requests for State
-func NewStateRequest(server string) (*http.Request, error) {
+// NewGetElectionStateRequest generates requests for GetElectionState
+func NewGetElectionStateRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -913,8 +1038,19 @@ func NewStateRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetHealthRequest generates requests for GetHealth
-func NewGetHealthRequest(server string) (*http.Request, error) {
+// NewAdminTransitionElectionStateRequest calls the generic AdminTransitionElectionState builder with application/json body
+func NewAdminTransitionElectionStateRequest(server string, body AdminTransitionElectionStateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAdminTransitionElectionStateRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAdminTransitionElectionStateRequestWithBody generates requests for AdminTransitionElectionState with any type of body
+func NewAdminTransitionElectionStateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -922,7 +1058,63 @@ func NewGetHealthRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/health")
+	operationPath := fmt.Sprintf("/api/v1/state")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteVoteRequest generates requests for DeleteVote
+func NewDeleteVoteRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/vote")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetVoteRequest generates requests for GetVote
+func NewGetVoteRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/vote")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -936,6 +1128,46 @@ func NewGetHealthRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSubmitVoteRequest calls the generic SubmitVote builder with application/json body
+func NewSubmitVoteRequest(server string, body SubmitVoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSubmitVoteRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSubmitVoteRequestWithBody generates requests for SubmitVote with any type of body
+func NewSubmitVoteRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/vote")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -983,23 +1215,21 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetBallotWithResponse request
+	GetBallotWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetBallotResponse, error)
+
 	// CreateElectionWithBodyWithResponse request with any body
 	CreateElectionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateElectionResponse, error)
 
 	CreateElectionWithResponse(ctx context.Context, body CreateElectionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateElectionResponse, error)
 
-	// AdminGetElectionStateWithResponse request
-	AdminGetElectionStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminGetElectionStateResponse, error)
-
-	// AdminTransitionElectionStateWithBodyWithResponse request with any body
-	AdminTransitionElectionStateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error)
-
-	AdminTransitionElectionStateWithResponse(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error)
-
 	// SetElectionMembersWithBodyWithResponse request with any body
 	SetElectionMembersWithBodyWithResponse(ctx context.Context, electionId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetElectionMembersResponse, error)
 
 	SetElectionMembersWithResponse(ctx context.Context, electionId string, body SetElectionMembersJSONRequestBody, reqEditors ...RequestEditorFn) (*SetElectionMembersResponse, error)
+
+	// DeleteNominationWithResponse request
+	DeleteNominationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeleteNominationResponse, error)
 
 	// GetNominationWithResponse request
 	GetNominationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNominationResponse, error)
@@ -1008,6 +1238,9 @@ type ClientWithResponsesInterface interface {
 	SubmitNominationWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitNominationResponse, error)
 
 	SubmitNominationWithResponse(ctx context.Context, body SubmitNominationJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitNominationResponse, error)
+
+	// GetPublicNominationWithResponse request
+	GetPublicNominationWithResponse(ctx context.Context, nominationId string, reqEditors ...RequestEditorFn) (*GetPublicNominationResponse, error)
 
 	// GenerateOtpWithBodyWithResponse request with any body
 	GenerateOtpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GenerateOtpResponse, error)
@@ -1019,11 +1252,47 @@ type ClientWithResponsesInterface interface {
 
 	SubmitOtpWithResponse(ctx context.Context, body SubmitOtpJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitOtpResponse, error)
 
-	// StateWithResponse request
-	StateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StateResponse, error)
+	// GetElectionStateWithResponse request
+	GetElectionStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetElectionStateResponse, error)
 
-	// GetHealthWithResponse request
-	GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error)
+	// AdminTransitionElectionStateWithBodyWithResponse request with any body
+	AdminTransitionElectionStateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error)
+
+	AdminTransitionElectionStateWithResponse(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error)
+
+	// DeleteVoteWithResponse request
+	DeleteVoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeleteVoteResponse, error)
+
+	// GetVoteWithResponse request
+	GetVoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVoteResponse, error)
+
+	// SubmitVoteWithBodyWithResponse request with any body
+	SubmitVoteWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitVoteResponse, error)
+
+	SubmitVoteWithResponse(ctx context.Context, body SubmitVoteJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitVoteResponse, error)
+}
+
+type GetBallotResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PublicBallot
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetBallotResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetBallotResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type CreateElectionResponse struct {
@@ -1049,51 +1318,6 @@ func (r CreateElectionResponse) StatusCode() int {
 	return 0
 }
 
-type AdminGetElectionStateResponse struct {
-	Body                          []byte
-	HTTPResponse                  *http.Response
-	JSON200                       *GetElectionStateResponseBody
-	ApplicationproblemJSONDefault *ErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r AdminGetElectionStateResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r AdminGetElectionStateResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type AdminTransitionElectionStateResponse struct {
-	Body                          []byte
-	HTTPResponse                  *http.Response
-	ApplicationproblemJSONDefault *ErrorModel
-}
-
-// Status returns HTTPResponse.Status
-func (r AdminTransitionElectionStateResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r AdminTransitionElectionStateResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type SetElectionMembersResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
@@ -1110,6 +1334,28 @@ func (r SetElectionMembersResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SetElectionMembersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteNominationResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNominationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNominationResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1142,6 +1388,7 @@ func (r GetNominationResponse) StatusCode() int {
 type SubmitNominationResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
+	JSON200                       *SubmitNominationResponseBody
 	ApplicationproblemJSONDefault *ErrorModel
 }
 
@@ -1155,6 +1402,29 @@ func (r SubmitNominationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SubmitNominationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPublicNominationResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *PublicNomination
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPublicNominationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPublicNominationResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1206,14 +1476,15 @@ func (r SubmitOtpResponse) StatusCode() int {
 	return 0
 }
 
-type StateResponse struct {
+type GetElectionStateResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
+	JSON200                       *GetElectionStateResponseBody
 	ApplicationproblemJSONDefault *ErrorModel
 }
 
 // Status returns HTTPResponse.Status
-func (r StateResponse) Status() string {
+func (r GetElectionStateResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1221,22 +1492,21 @@ func (r StateResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r StateResponse) StatusCode() int {
+func (r GetElectionStateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetHealthResponse struct {
+type AdminTransitionElectionStateResponse struct {
 	Body                          []byte
 	HTTPResponse                  *http.Response
-	JSON200                       *HealthOutput
 	ApplicationproblemJSONDefault *ErrorModel
 }
 
 // Status returns HTTPResponse.Status
-func (r GetHealthResponse) Status() string {
+func (r AdminTransitionElectionStateResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1244,11 +1514,87 @@ func (r GetHealthResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetHealthResponse) StatusCode() int {
+func (r AdminTransitionElectionStateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
+}
+
+type DeleteVoteResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteVoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteVoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetVoteResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	JSON200                       *Vote
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SubmitVoteResponse struct {
+	Body                          []byte
+	HTTPResponse                  *http.Response
+	ApplicationproblemJSONDefault *ErrorModel
+}
+
+// Status returns HTTPResponse.Status
+func (r SubmitVoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SubmitVoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// GetBallotWithResponse request returning *GetBallotResponse
+func (c *ClientWithResponses) GetBallotWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetBallotResponse, error) {
+	rsp, err := c.GetBallot(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetBallotResponse(rsp)
 }
 
 // CreateElectionWithBodyWithResponse request with arbitrary body returning *CreateElectionResponse
@@ -1268,32 +1614,6 @@ func (c *ClientWithResponses) CreateElectionWithResponse(ctx context.Context, bo
 	return ParseCreateElectionResponse(rsp)
 }
 
-// AdminGetElectionStateWithResponse request returning *AdminGetElectionStateResponse
-func (c *ClientWithResponses) AdminGetElectionStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AdminGetElectionStateResponse, error) {
-	rsp, err := c.AdminGetElectionState(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAdminGetElectionStateResponse(rsp)
-}
-
-// AdminTransitionElectionStateWithBodyWithResponse request with arbitrary body returning *AdminTransitionElectionStateResponse
-func (c *ClientWithResponses) AdminTransitionElectionStateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error) {
-	rsp, err := c.AdminTransitionElectionStateWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAdminTransitionElectionStateResponse(rsp)
-}
-
-func (c *ClientWithResponses) AdminTransitionElectionStateWithResponse(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error) {
-	rsp, err := c.AdminTransitionElectionState(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAdminTransitionElectionStateResponse(rsp)
-}
-
 // SetElectionMembersWithBodyWithResponse request with arbitrary body returning *SetElectionMembersResponse
 func (c *ClientWithResponses) SetElectionMembersWithBodyWithResponse(ctx context.Context, electionId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetElectionMembersResponse, error) {
 	rsp, err := c.SetElectionMembersWithBody(ctx, electionId, contentType, body, reqEditors...)
@@ -1309,6 +1629,15 @@ func (c *ClientWithResponses) SetElectionMembersWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseSetElectionMembersResponse(rsp)
+}
+
+// DeleteNominationWithResponse request returning *DeleteNominationResponse
+func (c *ClientWithResponses) DeleteNominationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeleteNominationResponse, error) {
+	rsp, err := c.DeleteNomination(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNominationResponse(rsp)
 }
 
 // GetNominationWithResponse request returning *GetNominationResponse
@@ -1335,6 +1664,15 @@ func (c *ClientWithResponses) SubmitNominationWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseSubmitNominationResponse(rsp)
+}
+
+// GetPublicNominationWithResponse request returning *GetPublicNominationResponse
+func (c *ClientWithResponses) GetPublicNominationWithResponse(ctx context.Context, nominationId string, reqEditors ...RequestEditorFn) (*GetPublicNominationResponse, error) {
+	rsp, err := c.GetPublicNomination(ctx, nominationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPublicNominationResponse(rsp)
 }
 
 // GenerateOtpWithBodyWithResponse request with arbitrary body returning *GenerateOtpResponse
@@ -1371,22 +1709,98 @@ func (c *ClientWithResponses) SubmitOtpWithResponse(ctx context.Context, body Su
 	return ParseSubmitOtpResponse(rsp)
 }
 
-// StateWithResponse request returning *StateResponse
-func (c *ClientWithResponses) StateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StateResponse, error) {
-	rsp, err := c.State(ctx, reqEditors...)
+// GetElectionStateWithResponse request returning *GetElectionStateResponse
+func (c *ClientWithResponses) GetElectionStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetElectionStateResponse, error) {
+	rsp, err := c.GetElectionState(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseStateResponse(rsp)
+	return ParseGetElectionStateResponse(rsp)
 }
 
-// GetHealthWithResponse request returning *GetHealthResponse
-func (c *ClientWithResponses) GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error) {
-	rsp, err := c.GetHealth(ctx, reqEditors...)
+// AdminTransitionElectionStateWithBodyWithResponse request with arbitrary body returning *AdminTransitionElectionStateResponse
+func (c *ClientWithResponses) AdminTransitionElectionStateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error) {
+	rsp, err := c.AdminTransitionElectionStateWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetHealthResponse(rsp)
+	return ParseAdminTransitionElectionStateResponse(rsp)
+}
+
+func (c *ClientWithResponses) AdminTransitionElectionStateWithResponse(ctx context.Context, body AdminTransitionElectionStateJSONRequestBody, reqEditors ...RequestEditorFn) (*AdminTransitionElectionStateResponse, error) {
+	rsp, err := c.AdminTransitionElectionState(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdminTransitionElectionStateResponse(rsp)
+}
+
+// DeleteVoteWithResponse request returning *DeleteVoteResponse
+func (c *ClientWithResponses) DeleteVoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeleteVoteResponse, error) {
+	rsp, err := c.DeleteVote(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteVoteResponse(rsp)
+}
+
+// GetVoteWithResponse request returning *GetVoteResponse
+func (c *ClientWithResponses) GetVoteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVoteResponse, error) {
+	rsp, err := c.GetVote(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVoteResponse(rsp)
+}
+
+// SubmitVoteWithBodyWithResponse request with arbitrary body returning *SubmitVoteResponse
+func (c *ClientWithResponses) SubmitVoteWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitVoteResponse, error) {
+	rsp, err := c.SubmitVoteWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSubmitVoteResponse(rsp)
+}
+
+func (c *ClientWithResponses) SubmitVoteWithResponse(ctx context.Context, body SubmitVoteJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitVoteResponse, error) {
+	rsp, err := c.SubmitVote(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSubmitVoteResponse(rsp)
+}
+
+// ParseGetBallotResponse parses an HTTP response from a GetBallotWithResponse call
+func ParseGetBallotResponse(rsp *http.Response) (*GetBallotResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetBallotResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PublicBallot
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseCreateElectionResponse parses an HTTP response from a CreateElectionWithResponse call
@@ -1422,65 +1836,6 @@ func ParseCreateElectionResponse(rsp *http.Response) (*CreateElectionResponse, e
 	return response, nil
 }
 
-// ParseAdminGetElectionStateResponse parses an HTTP response from a AdminGetElectionStateWithResponse call
-func ParseAdminGetElectionStateResponse(rsp *http.Response) (*AdminGetElectionStateResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &AdminGetElectionStateResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest GetElectionStateResponseBody
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest ErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseAdminTransitionElectionStateResponse parses an HTTP response from a AdminTransitionElectionStateWithResponse call
-func ParseAdminTransitionElectionStateResponse(rsp *http.Response) (*AdminTransitionElectionStateResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &AdminTransitionElectionStateResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest ErrorModel
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseSetElectionMembersResponse parses an HTTP response from a SetElectionMembersWithResponse call
 func ParseSetElectionMembersResponse(rsp *http.Response) (*SetElectionMembersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1490,6 +1845,32 @@ func ParseSetElectionMembersResponse(rsp *http.Response) (*SetElectionMembersRes
 	}
 
 	response := &SetElectionMembersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNominationResponse parses an HTTP response from a DeleteNominationWithResponse call
+func ParseDeleteNominationResponse(rsp *http.Response) (*DeleteNominationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNominationResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1554,6 +1935,46 @@ func ParseSubmitNominationResponse(rsp *http.Response) (*SubmitNominationRespons
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SubmitNominationResponseBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPublicNominationResponse parses an HTTP response from a GetPublicNominationWithResponse call
+func ParseGetPublicNominationResponse(rsp *http.Response) (*GetPublicNominationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPublicNominationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PublicNomination
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorModel
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1625,15 +2046,48 @@ func ParseSubmitOtpResponse(rsp *http.Response) (*SubmitOtpResponse, error) {
 	return response, nil
 }
 
-// ParseStateResponse parses an HTTP response from a StateWithResponse call
-func ParseStateResponse(rsp *http.Response) (*StateResponse, error) {
+// ParseGetElectionStateResponse parses an HTTP response from a GetElectionStateWithResponse call
+func ParseGetElectionStateResponse(rsp *http.Response) (*GetElectionStateResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &StateResponse{
+	response := &GetElectionStateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GetElectionStateResponseBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdminTransitionElectionStateResponse parses an HTTP response from a AdminTransitionElectionStateWithResponse call
+func ParseAdminTransitionElectionStateResponse(rsp *http.Response) (*AdminTransitionElectionStateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdminTransitionElectionStateResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1651,27 +2105,79 @@ func ParseStateResponse(rsp *http.Response) (*StateResponse, error) {
 	return response, nil
 }
 
-// ParseGetHealthResponse parses an HTTP response from a GetHealthWithResponse call
-func ParseGetHealthResponse(rsp *http.Response) (*GetHealthResponse, error) {
+// ParseDeleteVoteResponse parses an HTTP response from a DeleteVoteWithResponse call
+func ParseDeleteVoteResponse(rsp *http.Response) (*DeleteVoteResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetHealthResponse{
+	response := &DeleteVoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetVoteResponse parses an HTTP response from a GetVoteWithResponse call
+func ParseGetVoteResponse(rsp *http.Response) (*GetVoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVoteResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HealthOutput
+		var dest Vote
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSubmitVoteResponse parses an HTTP response from a SubmitVoteWithResponse call
+func ParseSubmitVoteResponse(rsp *http.Response) (*SubmitVoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SubmitVoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorModel
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
