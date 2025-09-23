@@ -11,7 +11,6 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/oapi-codegen/runtime/types"
 )
 
@@ -39,7 +38,7 @@ func GenerateOTPCmd(c *ClientWithIP, zID string) tea.Cmd {
 
 		resp, err := c.Client.GenerateOtpWithResponse(ctx, body, createIPRequestEditor(c.IP))
 		if err != nil {
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				RespID: "",
 				Error:  err,
 			}
@@ -56,13 +55,13 @@ func GenerateOTPCmd(c *ClientWithIP, zID string) tea.Cmd {
 				err = buildError(*resp.ApplicationproblemJSONDefault)
 			}
 
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				RespID: respID,
 				Error:  err,
 			}
 		}
 
-		return messages.GenerateOTPSuccessMsg{}
+		return GenerateOTPSuccessMsg{}
 	}
 }
 
@@ -80,7 +79,7 @@ func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 
 		resp, err := c.Client.SubmitOtpWithResponse(ctx, body, createIPRequestEditor(c.IP))
 		if err != nil {
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				RespID: "",
 				Error:  err,
 			}
@@ -90,7 +89,7 @@ func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 			respID := resp.HTTPResponse.Header.Get("X-Request-ID")
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				StatusCode: resp.StatusCode(),
 				RespID:     respID,
 				Error:      err,
@@ -98,7 +97,7 @@ func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 		}
 
 		// Build success message
-		return messages.SubmitOTPSuccessMsg{}
+		return SubmitOTPSuccessMsg{}
 	}
 
 }
@@ -110,7 +109,7 @@ func GetElectionStateCmd(c *ClientWithIP) tea.Cmd {
 
 		resp, err := c.Client.GetElectionStateWithResponse(ctx, createIPRequestEditor(c.IP))
 		if err != nil {
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				RespID: "",
 				Error:  err,
 			}
@@ -119,7 +118,7 @@ func GetElectionStateCmd(c *ClientWithIP) tea.Cmd {
 		// Add request ID as a reference code
 		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
 		if resp.StatusCode() == http.StatusUnauthorized {
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				StatusCode: resp.StatusCode(),
 				RespID:     respID,
 				Error:      ErrUnauthorised,
@@ -128,7 +127,7 @@ func GetElectionStateCmd(c *ClientWithIP) tea.Cmd {
 		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				StatusCode: resp.StatusCode(),
 				RespID:     respID,
 				Error:      err,
@@ -136,8 +135,48 @@ func GetElectionStateCmd(c *ClientWithIP) tea.Cmd {
 		}
 
 		// Build success message
-		return messages.GetElectionStateSuccessMsg{
+		return GetElectionStateSuccessMsg{
 			State: string(resp.JSON200.State),
+		}
+
+	}
+}
+
+func GetBallotCmd(c *ClientWithIP) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		resp, err := c.Client.GetBallotWithResponse(ctx, createIPRequestEditor(c.IP))
+		if err != nil {
+			return ServerErrMsg{
+				RespID: "",
+				Error:  err,
+			}
+		}
+
+		// Add request ID as a reference code
+		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
+		if resp.StatusCode() == http.StatusUnauthorized {
+			return ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      ErrUnauthorised,
+			}
+		}
+		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
+			err := buildError(*resp.ApplicationproblemJSONDefault)
+
+			return ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      err,
+			}
+		}
+
+		// Build success message
+		return GetBallotSuccessMsg{
+			Ballot: resp.JSON200,
 		}
 
 	}
@@ -145,7 +184,7 @@ func GetElectionStateCmd(c *ClientWithIP) tea.Cmd {
 
 // Sends request to submit a nomination, sends response back to root model as
 // ServerErrMsg or a success message
-func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
+func SubmitNominationCmd(c *ClientWithIP, data Submission) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
@@ -170,7 +209,7 @@ func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
 
 		resp, err := c.Client.SubmitNominationWithResponse(ctx, body, createIPRequestEditor(c.IP))
 		if err != nil {
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				RespID: "",
 				Error:  err,
 			}
@@ -179,7 +218,7 @@ func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
 		// Add request ID as a reference code
 		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
 		if resp.StatusCode() == http.StatusUnauthorized {
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				StatusCode: resp.StatusCode(),
 				RespID:     respID,
 				Error:      ErrUnauthorised,
@@ -188,7 +227,7 @@ func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
 		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
-			return messages.ServerErrMsg{
+			return ServerErrMsg{
 				StatusCode: resp.StatusCode(),
 				RespID:     respID,
 				Error:      err,
@@ -196,7 +235,51 @@ func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {
 		}
 
 		// Build success message
-		return messages.SubmitNominationSuccessMsg{
+		return SubmitNominationSuccessMsg{
+			RefCode: respID,
+		}
+
+	}
+}
+
+func SubmitVoteCmd(c *ClientWithIP, data map[string]string) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		body := SubmitVoteBody{
+			Positions: data,
+		}
+
+		resp, err := c.Client.SubmitVoteWithResponse(ctx, body, createIPRequestEditor(c.IP))
+		if err != nil {
+			return ServerErrMsg{
+				RespID: "",
+				Error:  err,
+			}
+		}
+
+		// Add request ID as a reference code
+		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
+		if resp.StatusCode() == http.StatusUnauthorized {
+			return ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      ErrUnauthorised,
+			}
+		}
+		if resp.StatusCode() != http.StatusNoContent && resp.ApplicationproblemJSONDefault != nil {
+			err := buildError(*resp.ApplicationproblemJSONDefault)
+
+			return ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      err,
+			}
+		}
+
+		// Build success message
+		return SubmitVoteSuccessMsg{
 			RefCode: respID,
 		}
 

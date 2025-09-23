@@ -1,4 +1,4 @@
-package nominationsubmit
+package votingsubmit
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	successMessage = "your nomination was submitted successfully! \n\nyour reference code is %s. a copy of your nomination has been submitted to your provided email address."
+	successMessage = "your vote was submitted successfully! \n\nyour reference code is %s."
 	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive on discord with the following reference code: %s."
 	exitMessage    = "exit with ctrl+c"
 )

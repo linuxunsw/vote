@@ -23,6 +23,8 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/closed"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/nominationform"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/nominationsubmit"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/voting"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/votingsubmit"
 )
 
 const helpHeight = 1
@@ -30,7 +32,7 @@ const helpHeight = 1
 // Form data
 type formData struct {
 	zID        string
-	submission messages.Submission
+	submission sdk.Submission
 }
 
 type rootModel struct {
@@ -71,6 +73,7 @@ func New(user, ip string) tea.Model {
 		pages.NominationForm:   nominationform.New(logger),
 		pages.NominationSubmit: nominationsubmit.New(logger),
 		pages.Closed:           closed.New(logger),
+		pages.VotingSubmit:     votingsubmit.New(logger),
 	}
 
 	// Create spinner
@@ -119,7 +122,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case messages.PageChangeMsg:
 		m.log.Debug("PageChangeMsg", "msg", msg)
 		return m, m.movePage(msg.ID)
-	case messages.GenerateOTPMsg:
+	case sdk.GenerateOTPMsg:
 		m.log.Debug("GenerateOTPMsg", "zID", msg.ZID)
 
 		m.data.zID = msg.ZID
@@ -127,14 +130,14 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.error = nil
 
 		return m, sdk.GenerateOTPCmd(m.client, m.data.zID)
-	case messages.SubmitOTPMsg:
+	case sdk.SubmitOTPMsg:
 		m.log.Debug("SubmitOTPMsg", "OTP", msg.OTP)
 
 		m.loading = true
 		m.error = nil
 
 		return m, sdk.SubmitOTPCmd(m.client, m.data.zID, msg.OTP)
-	case messages.Submission:
+	case sdk.Submission:
 		m.log.Debug(
 			"Submission",
 			"zid", m.data.zID,
@@ -148,17 +151,17 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.data.submission = msg
 
 		return m, sdk.SubmitNominationCmd(m.client, m.data.submission)
-	case messages.GenerateOTPSuccessMsg:
+	case sdk.GenerateOTPSuccessMsg:
 		m.log.Debug("GenerateOTPSuccessMsg")
 		m.loading = false
 		return m, messages.SendPageChange(pages.AuthCode)
-	case messages.SubmitOTPSuccessMsg:
+	case sdk.SubmitOTPSuccessMsg:
 		m.log.Debug("SubmitOTPSuccessMsg")
 
 		m.isAuthenticated = true
 
 		return m, sdk.GetElectionStateCmd(m.client)
-	case messages.GetElectionStateSuccessMsg:
+	case sdk.GetElectionStateSuccessMsg:
 		m.log.Debug("GetElectionStateSuccessMsg", "state", msg.State)
 
 		m.loading = false
@@ -167,21 +170,32 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.State == string(sdk.GetElectionStateResponseBodyStateNOMINATIONSOPEN) {
 			return m, messages.SendPageChange(pages.NominationForm)
 		} else if msg.State == string(sdk.GetElectionStateResponseBodyStateVOTINGOPEN) {
-			// TODO: switch to voting form
-			return m, messages.SendPageChange(pages.NominationForm)
+			m.loading = true
+			return m, sdk.GetBallotCmd(m.client)
 		} else {
 			return m, messages.SendPageChange(pages.Closed)
-
 		}
-
-	case messages.SubmitNominationSuccessMsg:
+	case sdk.GetBallotSuccessMsg:
+		m.loading = false
+		m.pages[pages.VotingForm] = voting.New(m.log, *msg.Ballot)
+		return m, messages.SendPageChange(pages.VotingForm)
+	case sdk.SubmitVoteMsg:
+		m.loading = true
+		return m, sdk.SubmitVoteCmd(m.client, msg.Votes)
+	case sdk.SubmitVoteSuccessMsg:
+		m.loading = false
+		return m, tea.Sequence(
+			messages.SendPageChange(pages.VotingSubmit),
+			sdk.SendPublicSubmitFormResult(msg.RefCode, nil),
+		)
+	case sdk.SubmitNominationSuccessMsg:
 		m.log.Debug("SubmitNominationSuccessMsg", "refCode", msg.RefCode)
 		m.loading = false
 		return m, tea.Sequence(
 			messages.SendPageChange(pages.NominationSubmit),
-			messages.SendPublicSubmitFormResult(msg.RefCode, nil),
+			sdk.SendPublicSubmitFormResult(msg.RefCode, nil),
 		)
-	case messages.ServerErrMsg:
+	case sdk.ServerErrMsg:
 		// INFO: we must handle the ServerErrMsg here as well as in the current
 		// model as failing to disable loading will prevent the current page
 		// from displaying (thus not displaying the error)
@@ -198,6 +212,7 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loaded[pages.Auth] = false
 			m.loaded[pages.AuthCode] = false
 			m.loaded[pages.NominationForm] = false
+			m.loaded[pages.VotingForm] = false
 
 			m.isAuthenticated = false
 			return m, messages.SendPageChange(pages.Auth)

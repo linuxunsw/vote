@@ -1,4 +1,4 @@
-package nominationform
+package voting
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,12 +23,15 @@ type formModel struct {
 }
 
 // Creates model
-func New(logger *log.Logger) tea.Model {
+func New(logger *log.Logger, data sdk.PublicBallot) tea.Model {
+	var vote map[string]string
+
 	model := &formModel{
 		logger:      logger,
-		form:        forms.Nomination(),
 		isSubmitted: false,
 	}
+
+	model.form = forms.Voting(data, vote)
 
 	return model
 }
@@ -47,22 +50,22 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.form.State == huh.StateCompleted && !m.isSubmitted {
 		m.isSubmitted = true
 
-		data := sdk.Submission{
-			Name:      m.form.GetString("name"),
-			Email:     m.form.GetString("email"),
-			Discord:   m.form.GetString("discord"),
-			Statement: m.form.GetString("statement"),
-			Url:       m.form.GetString("url"),
+		positions := make(map[string]string)
+
+		for key, val := range map[string]string{
+			"president":         m.form.GetString("president"),
+			"secretary":         m.form.GetString("secretary"),
+			"treasurer":         m.form.GetString("treasurer"),
+			"arc_delegate":      m.form.GetString("arc_delegate"),
+			"edi_officer":       m.form.GetString("edi_officer"),
+			"grievance_officer": m.form.GetString("grievance_officer"),
+		} {
+			if val != "" {
+				positions[key] = val
+			}
 		}
 
-		formRoles := m.form.Get("roles")
-		roles, ok := formRoles.([]string)
-		if !ok {
-			m.logger.Error("failed to convert roles to str slice")
-		}
-		data.Roles = roles
-
-		return m, sdk.SendNomination(data)
+		return m, sdk.SendSubmitVote(positions)
 	}
 
 	switch msg := msg.(type) {
@@ -74,7 +77,7 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
 	case sdk.ServerErrMsg:
 		return m, tea.Sequence(
-			messages.SendPageChange(pages.NominationSubmit),
+			messages.SendPageChange(pages.VotingSubmit),
 			sdk.SendPublicSubmitFormResult(msg.RespID, msg.Error),
 		)
 	}
