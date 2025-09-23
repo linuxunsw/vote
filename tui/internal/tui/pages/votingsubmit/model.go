@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:tui/internal/tui/pages/votingsubmit/model.go
 package votingsubmit
+========
+package nominationsubmit
+>>>>>>>> e334bea (feat(tui): added closed state page):tui/internal/tui/pages/nominationsubmit/model.go
 
 import (
 	"fmt"
