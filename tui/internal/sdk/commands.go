@@ -103,6 +103,46 @@ func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 
 }
 
+func GetElectionStateCmd(c *ClientWithIP) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		resp, err := c.Client.GetElectionStateWithResponse(ctx, createIPRequestEditor(c.IP))
+		if err != nil {
+			return messages.ServerErrMsg{
+				RespID: "",
+				Error:  err,
+			}
+		}
+
+		// Add request ID as a reference code
+		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
+		if resp.StatusCode() == http.StatusUnauthorized {
+			return messages.ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      ErrUnauthorised,
+			}
+		}
+		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
+			err := buildError(*resp.ApplicationproblemJSONDefault)
+
+			return messages.ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      err,
+			}
+		}
+
+		// Build success message
+		return messages.GetElectionStateSuccessMsg{
+			State: string(resp.JSON200.State),
+		}
+
+	}
+}
+
 // Sends request to submit a nomination, sends response back to root model as
 // ServerErrMsg or a success message
 func SubmitNominationCmd(c *ClientWithIP, data messages.Submission) tea.Cmd {

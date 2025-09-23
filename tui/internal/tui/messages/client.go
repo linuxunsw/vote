@@ -23,6 +23,10 @@ type SubmitOTPMsg struct {
 }
 type SubmitOTPSuccessMsg struct{}
 
+type GetElectionStateSuccessMsg struct {
+	State string
+}
+
 // Submission is sent as a message to the root model
 type Submission struct {
 	Name      string   `json:"candidate_name"`

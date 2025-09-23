@@ -1,4 +1,4 @@
-package submit
+package closed
 
 import (
 	"fmt"
@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	successMessage = "your nomination was submitted successfully! \n\nyour reference code is %s. a copy of your nomination has been submitted to your provided email address."
-	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive on discord with the following reference code: %s."
-	exitMessage    = "exit with ctrl+c"
+	closedMessage = "voting/nominations are currently closed, please come back later!"
+	exitMessage   = "exit with ctrl+c"
 )
 
 type submitModel struct {
@@ -21,10 +20,6 @@ type submitModel struct {
 	// Maximum size allowed for content
 	cWidth  int
 	cHeight int
-
-	// Submission details
-	refCode string
-	error   error
 }
 
 func New(logger *log.Logger) tea.Model {
@@ -47,30 +42,15 @@ func (m *submitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cWidth = msg.Width
 
 		return m, nil
-	case messages.PublicSubmitFormResultMsg:
-		log.Debug("PublicSubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
-		m.refCode = msg.RefCode
-		m.error = msg.Error
-
-		return m, nil
 	}
-
 	return m, nil
 }
 
 // Displays message which changes depending on whether the submission was successful
 // or there was a server error
 func (m *submitModel) View() string {
-	var content string
-
-	if m.error != nil {
-		content = fmt.Sprintf(errorMessage, m.refCode)
-	} else {
-		content = fmt.Sprintf(successMessage, m.refCode)
-	}
-
 	exit := styles.ExitMessageStyle.Render(exitMessage)
 
-	message := fmt.Sprintf("%s\n\n%s", content, exit)
+	message := fmt.Sprintf("%s\n\n%s", closedMessage, exit)
 	return styles.SubmitText(m.cHeight, m.cWidth).Render(message)
 }

@@ -1,4 +1,4 @@
-package form
+package nominationform
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
@@ -22,8 +22,6 @@ type formModel struct {
 }
 
 // Creates model
-// TODO: determine which form to display depending on
-// server state (e.g. nomination vs voting)
 func New(logger *log.Logger) tea.Model {
 	model := &formModel{
 		logger:      logger,
@@ -74,9 +72,8 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
 	case messages.ServerErrMsg:
-		// TODO: separate AUTHORISATION ERRORS from other errors
 		return m, tea.Sequence(
-			messages.SendPageChange(pages.PageSubmit),
+			messages.SendPageChange(pages.NominationSubmit),
 			messages.SendPublicSubmitFormResult(msg.RespID, msg.Error),
 		)
 	}

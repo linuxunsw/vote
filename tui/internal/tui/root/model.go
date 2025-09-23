@@ -20,8 +20,9 @@ import (
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/auth"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages/authcode"
-	"github.com/linuxunsw/vote/tui/internal/tui/pages/form"
-	"github.com/linuxunsw/vote/tui/internal/tui/pages/submit"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/closed"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/nominationform"
+	"github.com/linuxunsw/vote/tui/internal/tui/pages/nominationsubmit"
 )
 
 const helpHeight = 1
@@ -65,10 +66,11 @@ func New(user, ip string) tea.Model {
 
 	// Load each page
 	pageMap := map[pages.PageID]tea.Model{
-		pages.PageAuth:     auth.New(logger),
-		pages.PageAuthCode: authcode.New(logger),
-		pages.PageForm:     form.New(logger),
-		pages.PageSubmit:   submit.New(logger),
+		pages.Auth:             auth.New(logger),
+		pages.AuthCode:         authcode.New(logger),
+		pages.NominationForm:   nominationform.New(logger),
+		pages.NominationSubmit: nominationsubmit.New(logger),
+		pages.Closed:           closed.New(logger),
 	}
 
 	// Create spinner
@@ -86,7 +88,7 @@ func New(user, ip string) tea.Model {
 		loaded:          make(map[pages.PageID]bool),
 		loading:         false,
 		loadingSpinner:  loadingSpinner,
-		current:         pages.PageAuth,
+		current:         pages.Auth,
 	}
 
 	model.log.Info("Starting app...")
@@ -149,16 +151,34 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case messages.GenerateOTPSuccessMsg:
 		m.log.Debug("GenerateOTPSuccessMsg")
 		m.loading = false
-		return m, messages.SendPageChange(pages.PageAuthCode)
+		return m, messages.SendPageChange(pages.AuthCode)
 	case messages.SubmitOTPSuccessMsg:
 		m.log.Debug("SubmitOTPSuccessMsg")
+
+		m.isAuthenticated = true
+
+		return m, sdk.GetElectionStateCmd(m.client)
+	case messages.GetElectionStateSuccessMsg:
+		m.log.Debug("GetElectionStateSuccessMsg", "state", msg.State)
+
 		m.loading = false
-		return m, messages.SendPageChange(pages.PageForm)
+
+		// change form depending on state
+		if msg.State == string(sdk.GetElectionStateResponseBodyStateNOMINATIONSOPEN) {
+			return m, messages.SendPageChange(pages.NominationForm)
+		} else if msg.State == string(sdk.GetElectionStateResponseBodyStateVOTINGOPEN) {
+			// TODO: switch to voting form
+			return m, messages.SendPageChange(pages.NominationForm)
+		} else {
+			return m, messages.SendPageChange(pages.Closed)
+
+		}
+
 	case messages.SubmitNominationSuccessMsg:
 		m.log.Debug("SubmitNominationSuccessMsg", "refCode", msg.RefCode)
 		m.loading = false
 		return m, tea.Sequence(
-			messages.SendPageChange(pages.PageSubmit),
+			messages.SendPageChange(pages.NominationSubmit),
 			messages.SendPublicSubmitFormResult(msg.RefCode, nil),
 		)
 	case messages.ServerErrMsg:
@@ -172,15 +192,15 @@ func (m *rootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Reset everything if unauthorised (means cookie has expired)
 		if msg.Error == sdk.ErrUnauthorised {
 			// reset pages
-			m.pages[pages.PageAuth] = auth.New(m.log)
-			m.pages[pages.PageAuthCode] = authcode.New(m.log)
-			m.pages[pages.PageForm] = form.New(m.log)
-			m.loaded[pages.PageAuth] = false
-			m.loaded[pages.PageAuthCode] = false
-			m.loaded[pages.PageForm] = false
+			m.pages[pages.Auth] = auth.New(m.log)
+			m.pages[pages.AuthCode] = authcode.New(m.log)
+			m.pages[pages.NominationForm] = nominationform.New(m.log)
+			m.loaded[pages.Auth] = false
+			m.loaded[pages.AuthCode] = false
+			m.loaded[pages.NominationForm] = false
 
 			m.isAuthenticated = false
-			return m, messages.SendPageChange(pages.PageAuth)
+			return m, messages.SendPageChange(pages.Auth)
 
 		}
 	case spinner.TickMsg:
