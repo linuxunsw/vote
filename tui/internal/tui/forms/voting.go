@@ -42,9 +42,10 @@ func Voting(data sdk.PublicBallot, vote map[string]string) *huh.Form {
 func optionsForRole(data sdk.PublicBallot, role sdk.NominationExecutiveRoles) []huh.Option[string] {
 	var opts []huh.Option[string]
 	candidates, ok := data.Candidates[string(role)]
+	opts = append(opts, huh.NewOption("no confidence", ""))
 
 	if !ok {
-		return []huh.Option[string]{huh.NewOption("no option", "")}
+		return opts
 	}
 
 	for _, candidate := range *candidates {
