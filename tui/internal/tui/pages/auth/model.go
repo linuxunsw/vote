@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 
+	"github.com/linuxunsw/vote/tui/internal/sdk"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
@@ -56,7 +57,7 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.isSubmitted = true
 
-		return m, messages.SendGenerateOTP(zID)
+		return m, sdk.SendGenerateOTP(zID)
 	}
 
 	// Handle remaining commands
@@ -70,7 +71,7 @@ func (m *authModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		formWidth := lipgloss.Width(m.form.View())
 		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
 		return m, nil
-	case messages.ServerErrMsg:
+	case sdk.ServerErrMsg:
 		m.isSubmitted = false
 		m.form = forms.ZID().WithHeight(m.cHeight).WithWidth(m.cWidth)
 		m.form.Init()

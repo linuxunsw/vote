@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/linuxunsw/vote/tui/internal/sdk"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
@@ -55,7 +56,7 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		formWidth := lipgloss.Width(m.form.View())
 		m.logger.Debug("Form Size", "height", formHeight, "width", formWidth)
 		return m, nil
-	case messages.ServerErrMsg:
+	case sdk.ServerErrMsg:
 		m.isSubmitted = false
 		m.form = forms.OTP().WithHeight(m.cHeight).WithWidth(m.cWidth)
 		m.form.Init()
@@ -69,7 +70,7 @@ func (m *authCodeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.form.State == huh.StateCompleted && !m.isSubmitted {
 		m.isSubmitted = true
 		otp := m.form.GetString("otp")
-		return m, messages.SendSubmitOTP(otp)
+		return m, sdk.SendSubmitOTP(otp)
 	}
 
 	return m, cmd

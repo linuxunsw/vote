@@ -1,17 +1,18 @@
-package submit
+package votingsubmit
 
 import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/linuxunsw/vote/tui/internal/sdk"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/styles"
 )
 
 const (
-	successMessage = "your nomination was submitted successfully! \n\nyour reference code is %s. a copy of your nomination has been submitted to your provided email address."
-	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive on discord with the following reference code: %s."
+	successMessage = "your vote was submitted successfully! \n\nyour reference code is %s."
+	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive with the following reference code: %s."
 	exitMessage    = "exit with ctrl+c"
 )
 
@@ -47,7 +48,7 @@ func (m *submitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cWidth = msg.Width
 
 		return m, nil
-	case messages.PublicSubmitFormResultMsg:
+	case sdk.PublicSubmitFormResultMsg:
 		log.Debug("PublicSubmitFormResultMsg", "refCode", msg.RefCode, "error", msg.Error)
 		m.refCode = msg.RefCode
 		m.error = msg.Error

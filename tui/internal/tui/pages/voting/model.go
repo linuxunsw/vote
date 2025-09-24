@@ -1,9 +1,10 @@
-package form
+package voting
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/log"
+	"github.com/linuxunsw/vote/tui/internal/sdk"
 	"github.com/linuxunsw/vote/tui/internal/tui/forms"
 	"github.com/linuxunsw/vote/tui/internal/tui/messages"
 	"github.com/linuxunsw/vote/tui/internal/tui/pages"
@@ -22,14 +23,15 @@ type formModel struct {
 }
 
 // Creates model
-// TODO: determine which form to display depending on
-// server state (e.g. nomination vs voting)
-func New(logger *log.Logger) tea.Model {
+func New(logger *log.Logger, data sdk.PublicBallot) tea.Model {
+	var vote map[string]string
+
 	model := &formModel{
 		logger:      logger,
-		form:        forms.Nomination(),
 		isSubmitted: false,
 	}
+
+	model.form = forms.Voting(data, vote)
 
 	return model
 }
@@ -48,22 +50,23 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.form.State == huh.StateCompleted && !m.isSubmitted {
 		m.isSubmitted = true
 
-		data := messages.Submission{
-			Name:      m.form.GetString("name"),
-			Email:     m.form.GetString("email"),
-			Discord:   m.form.GetString("discord"),
-			Statement: m.form.GetString("statement"),
-			Url:       m.form.GetString("url"),
+		positions := make(map[string]string)
+
+		// if the choice was empty, skip
+		for key, val := range map[string]string{
+			"president":         m.form.GetString("president"),
+			"secretary":         m.form.GetString("secretary"),
+			"treasurer":         m.form.GetString("treasurer"),
+			"arc_delegate":      m.form.GetString("arc_delegate"),
+			"edi_officer":       m.form.GetString("edi_officer"),
+			"grievance_officer": m.form.GetString("grievance_officer"),
+		} {
+			if val != "" {
+				positions[key] = val
+			}
 		}
 
-		formRoles := m.form.Get("roles")
-		roles, ok := formRoles.([]string)
-		if !ok {
-			m.logger.Error("failed to convert roles to str slice")
-		}
-		data.Roles = roles
-
-		return m, messages.SendNomination(data)
+		return m, sdk.SendSubmitVote(positions)
 	}
 
 	switch msg := msg.(type) {
@@ -73,11 +76,10 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cWidth = msg.Width
 
 		m.form = m.form.WithHeight(m.cHeight).WithWidth(m.cWidth)
-	case messages.ServerErrMsg:
-		// TODO: separate AUTHORISATION ERRORS from other errors
+	case sdk.ServerErrMsg:
 		return m, tea.Sequence(
-			messages.SendPageChange(pages.PageSubmit),
-			messages.SendPublicSubmitFormResult(msg.RespID, msg.Error),
+			messages.SendPageChange(pages.VotingSubmit),
+			sdk.SendPublicSubmitFormResult(msg.RespID, msg.Error),
 		)
 	}
 
