@@ -1,16 +1,27 @@
 <script lang="ts">
-  import { Github, Instagram, BotMessageSquare, University } from "@lucide/svelte";
+  import { simpleIconToIconNode } from "$lib/simpleIcontoIconNode";
+  import { Github, Instagram, University, type IconNode, Icon } from "@lucide/svelte";
+  import { siDiscord } from "simple-icons";
   import type { Component } from "svelte";
+  const discordNode = simpleIconToIconNode(siDiscord, {
+    title: siDiscord.title,
+    fill: null,
+    strokeWidth: 1.5,
+  });
 </script>
 
-{#snippet social(label: string, href: string, Icon: Component)}
+{#snippet social(label: string, href: string, LucideIcon?: Component, simpleIcon?: IconNode)}
   <a
     {href}
     target="_blank"
     rel="noreferrer"
     class="flex items-center gap-2 text-foreground underline-offset-4 hover:underline"
   >
-    <Icon class="h-5 w-5" />
+    {#if LucideIcon}
+      <LucideIcon class="h-5 w-5" />
+    {:else if simpleIcon}
+      <Icon iconNode={simpleIcon} />
+    {/if}
     <span>{label}</span>
   </a>
 {/snippet}
@@ -29,7 +40,7 @@
   <div class="flex flex-wrap justify-center gap-x-6 gap-y-3">
     {@render social("Source", "https://github.com/linuxunsw/vote", Github)}
     {@render social("Rubric", "https://campus.hellorubric.com/?s=12591", University)}
-    {@render social("Discord", "https://discord.gg/7Tqz2bn8Gz", BotMessageSquare)}
+    {@render social("Discord", "https://discord.gg/7Tqz2bn8Gz", undefined, discordNode)}
     {@render social("Instagram", "https://instagram.com/linsocunsw", Instagram)}
   </div>
 </div>
