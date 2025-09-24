@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { authState } from "$lib/stores.svelte";
 </script>
 
@@ -19,7 +20,9 @@
       {#if authState.value?.is_admin}
         <span class="text-muted-foreground">|</span>
         <div class="text-center text-xs leading-loose text-muted-foreground sm:text-sm">
-          <a href="/admin" class="font-medium underline underline-offset-4">Admin Dashboard</a>
+          <a href={resolve("/admin")} class="font-medium underline underline-offset-4"
+            >Admin Dashboard</a
+          >
         </div>
       {/if}
     </div>

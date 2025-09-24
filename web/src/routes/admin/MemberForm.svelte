@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setElectionMembers } from "$lib/api";
+  import { setElectionMembers, type ErrorModel } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -33,7 +33,7 @@
           loading: "Updating member list...",
           success: "Member list successfully updated!",
           error: (e) => {
-            return e.detail ?? "An error occurred.";
+            return (e as ErrorModel).detail ?? "An error occurred.";
           },
         },
       );

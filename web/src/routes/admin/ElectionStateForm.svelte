@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { adminTransitionElectionState } from "$lib/api";
+  import { adminTransitionElectionState, type ErrorModel } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import * as Select from "$lib/components/ui/select";
@@ -32,7 +32,7 @@
         return "State updated successfully.";
       },
       error: (e) => {
-        return e.detail ?? "An error occurred.";
+        return (e as ErrorModel).detail ?? "An error occurred.";
       },
     });
     e.preventDefault();

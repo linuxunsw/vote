@@ -2,7 +2,7 @@
   import {
     submitNomination,
     zSubmitNominationWritable,
-    type SubmitNominationError,
+    type ErrorModel,
     type SubmitNominationWritable,
   } from "$lib/api";
   import * as Card from "$lib/components/ui/card";
@@ -69,8 +69,7 @@
             return "Successfully submitted nomination!";
           },
           error: (e) => {
-            return e.detail ?? "An error has occured";
-            //TODO FIXME: THIS IS BREAKING UI ON ERROR
+            return (e as ErrorModel).detail ?? "An error has occured";
           },
         });
       },
@@ -91,7 +90,7 @@
   }
 </script>
 
-<Card.Root>
+<Card.Root class="max-w-128">
   <Card.Header>
     <Card.Title class="text-2xl">{nomination ? "Edit Your" : "Submit a"} Nomination</Card.Title>
     <Card.Description>
