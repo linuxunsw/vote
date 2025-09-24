@@ -5,8 +5,13 @@
   import { page } from "$app/state";
 
   $effect(() => {
-    if (page.url.searchParams.get("error") === "session_expired") {
-      toast.warning("Your session has expired, please log in again.");
+    switch (page.url.searchParams.get("error")) {
+      case "session_expired":
+        toast.warning("Your session has expired, please log in again.");
+        break;
+      case "unauthorized":
+        toast.error("You are not authorized to access that content.");
+        break;
     }
   });
 </script>

@@ -1,7 +1,15 @@
 <script lang="ts">
+  import { setElectionMembers } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
+  import { toast } from "svelte-sonner";
+
+  type Props = {
+    election_id: string;
+  };
+
+  let { election_id }: Props = $props();
 
   let files = $state<FileList>();
 
@@ -17,17 +25,22 @@
       if (!e.target) return;
       const text = e.target.result;
       if (typeof text !== "string") return;
-      const matches = text.match(/z\d{9}/g);
+      const matches = [...(text.match(/z\d{9}/g) ?? [])];
 
-      // TODO: api stuff
-      console.log(matches);
-
-      // TODO: success feedback
+      toast.promise(
+        setElectionMembers({ path: { election_id }, body: { zids: matches }, throwOnError: true }),
+        {
+          loading: "Updating member list...",
+          success: "Member list successfully updated!",
+          error: (e) => {
+            return e.detail ?? "An error occurred.";
+          },
+        },
+      );
     };
 
     reader.onerror = (e) => {
-      // TODO: error feedback
-      console.error(e);
+      toast.error("Error reading file: " + e.toString());
     };
 
     reader.readAsText(file);
