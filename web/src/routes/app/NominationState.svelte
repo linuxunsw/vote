@@ -81,7 +81,7 @@
         </div>
         <div class="sm:col-span-2">
           <dt class="text-sm font-medium text-muted-foreground">Candidate Statement</dt>
-          <dd class="mt-1 whitespace-pre-wrap">{nomination.candidate_statement}</dd>
+          <dd class="mt-1 break-words whitespace-pre-wrap">{nomination.candidate_statement}</dd>
         </div>
         <div class="sm:col-span-2">
           <dt class="text-sm font-medium text-muted-foreground">URL</dt>
