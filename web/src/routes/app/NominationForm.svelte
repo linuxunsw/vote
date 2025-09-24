@@ -62,14 +62,14 @@
 
         const payload = buildSubmitPayload(form.data as Partial<SubmitNominationWritable>);
         toast.promise(submitNomination({ body: payload, throwOnError: true }), {
-          loading: "submitting...",
+          loading: "Submitting...",
           success: () => {
             onsuccess();
             return "Successfully submitted nomination!";
           },
 
-          error: (data) => {
-            return data.error?.title ?? "An error has occured";
+          error: (e) => {
+            return e.detail ?? "An error has occured";
             //TODO FIXME: THIS IS BREAKING UI ON ERROR
           },
         });
