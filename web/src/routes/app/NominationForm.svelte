@@ -138,7 +138,7 @@
               <Input
                 {...props}
                 placeholder="e.g., your personal website"
-                bind:value={$formData.url}
+                bind:value={() => $formData.url, (v) => ($formData.url = v || undefined)}
               />
             {/snippet}
           </Form.Control>
