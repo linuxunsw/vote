@@ -14,11 +14,12 @@ jobs:
           fetch-depth: 0
 
       - name: prettier
-        # TODO: Ideally we would use the upstream version, but that is broken due to not supporting fail_level
-        # https://github.com/EPMatt/reviewdog-action-prettier/issues/72 (the issue is misguided but might still be useful for trcacking)
-        uses: gcaracuel/reviewdog-action-prettier@ddacbf3caf877fd012b68601baa1903cde600bc7
+        # TODO: Ideally we would use the upstream version, but that is broken for a number of reasons.
+        uses: Zopolis4/reviewdog-action-prettier@8982f2dd22b76752053312a122a06fdba163a240
         with:
           fail_level: any
           filter_mode: nofilter
-          reporter: github-check
+          # TODO: All the reporters are broken, including this one, because they do not properly fail on errors.
+          # This one prints the errors in the CI logs and fails when prettier detects errors, so its good enough for now.
+          reporter: github-pr-review
           workdir: ${{ inputs.subrepo }}
