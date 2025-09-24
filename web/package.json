@@ -55,6 +55,6 @@
   "dependencies": {
     "mode-watcher": "^1.1.0",
     "simple-icons": "^15.16.0",
-    "zod": "4.0.10"
+    "zod": "3.25.76"
   }
 }

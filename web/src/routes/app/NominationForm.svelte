@@ -10,10 +10,10 @@
   import { Input } from "$lib/components/ui/input";
   import { Textarea } from "$lib/components/ui/textarea";
   import { defaults, superForm } from "sveltekit-superforms";
-  import { zod4Client } from "sveltekit-superforms/adapters";
+  import { zodClient } from "sveltekit-superforms/adapters";
   import { toast } from "svelte-sonner";
 
-  const superFormsAdapter = zod4Client(zSubmitNominationWritable);
+  const superFormsAdapter = zodClient(zSubmitNominationWritable);
 
   const execRoleItems = [
     { id: "president", label: "President" },
