@@ -21,8 +21,8 @@ export const load: PageLoad = async ({ fetch }) => {
       // logged out or session expired, redirect to login
       goto("/?error=session_expired");
       return;
-    } else if (errorCode !== 404) {
-      // 404 means no nomination, which isn't a fatal error for this client
+    } else if (errorCode !== 404 && errorCode !== 400) {
+      // 404 means no nomination and 400 means no election, which aren't fatal errors for this client
       error(errorCode, errorData.detail);
     }
   }
