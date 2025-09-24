@@ -3,10 +3,12 @@
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Card from "$lib/components/ui/card";
   import * as InputOTP from "$lib/components/ui/input-otp";
-  import { ArrowRight } from "@lucide/svelte";
+  import Label from "$lib/components/ui/label/label.svelte";
+  import { LoaderCircle } from "@lucide/svelte";
   import * as z from "zod";
+  import { REGEXP_ONLY_DIGITS } from "bits-ui";
 
-  const OTP_VALIDATOR = z.string().regex(/^\d{6}$/);
+  const OTP_VALIDATOR = z.string().regex(/^\d{6}$/, "Your OTP must be 6 digits.");
 
   type Props = {
     zid: string;
@@ -18,49 +20,70 @@
 
   let otpError = $state<string | null>(null);
   let otp = $state("");
+  let isLoading = $state(false);
 
   async function handleSubmitOTP() {
     otpError = null;
+    isLoading = true;
     try {
       OTP_VALIDATOR.parse(otp);
-      const { data, error } = await submitOtp({ body: { zid, otp }, credentials: "include" });
+      const { data, error } = await submitOtp({ body: { zid, otp } });
       if (error) {
-        otpError = error.detail ?? "Invalid OTP.";
+        otpError = error.detail ?? "The OTP you entered is invalid or has expired.";
         return;
       }
-      onsuccess(data);
+      if (data) {
+        onsuccess(data);
+      }
     } catch (e) {
       if (e instanceof z.ZodError) {
-        otpError = "Invalid OTP.";
+        otpError = e.message;
       }
+    } finally {
+      isLoading = false;
     }
   }
 </script>
 
-<Card.Header>
-  <Card.Title>Enter OTP</Card.Title>
-  <Card.Description
-    >We sent an OTP to your UNSW Email. Please enter it below to proceed.</Card.Description
-  >
+<Card.Header class="text-center">
+  <Card.Title class="text-2xl">Check your email</Card.Title>
+  <Card.Description>We've sent a 6-digit code to your UNSW student email.</Card.Description>
 </Card.Header>
 <Card.Content>
-  <form onsubmit={handleSubmitOTP} class="flex w-full flex-col gap-1.5">
-    <InputOTP.Root maxlength={6} bind:value={otp}>
-      {#snippet children({ cells })}
-        <InputOTP.Group>
-          {#each cells as cell (cell)}
-            <InputOTP.Slot {cell} aria-invalid={otpError !== null} />
-          {/each}
-        </InputOTP.Group>
-      {/snippet}
-    </InputOTP.Root>
-    {#if otpError !== null}
-      <p class="text-sm text-muted-foreground">{otpError}</p>
-    {/if}
-    <Button class="gap-1" type="submit">
-      <span>Submit</span>
-      <ArrowRight />
-    </Button>
-    <Button variant="outline" onclick={oncancel}>Use a different zID</Button>
+  <form onsubmit={handleSubmitOTP} class="grid gap-4">
+    <div class="grid place-items-center gap-2 text-center">
+      <Label for="otp-input" class="sr-only">One-Time Password</Label>
+      <InputOTP.Root id="otp-input" pattern={REGEXP_ONLY_DIGITS} maxlength={6} bind:value={otp}>
+        {#snippet children({ cells })}
+          <InputOTP.Group>
+            {#each cells.slice(0, 3) as cell (cell)}
+              <InputOTP.Slot {cell} />
+            {/each}
+          </InputOTP.Group>
+          <InputOTP.Separator>|</InputOTP.Separator>
+          <InputOTP.Group>
+            {#each cells.slice(3, 6) as cell (cell)}
+              <InputOTP.Slot {cell} />
+            {/each}
+          </InputOTP.Group>
+        {/snippet}
+      </InputOTP.Root>
+      {#if otpError}
+        <p class="text-sm text-destructive">{otpError}</p>
+      {/if}
+    </div>
+    <div class="grid gap-2">
+      <Button type="submit" class="w-full" disabled={isLoading}>
+        {#if isLoading}
+          <LoaderCircle class="mr-2 h-4 w-4 animate-spin" />
+          <span>Verifying...</span>
+        {:else}
+          <span>Continue</span>
+        {/if}
+      </Button>
+      <Button variant="link" size="sm" class="w-full" onclick={oncancel} disabled={isLoading}>
+        Use a different zID
+      </Button>
+    </div>
   </form>
 </Card.Content>

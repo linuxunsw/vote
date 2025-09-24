@@ -1,21 +1,22 @@
 <script lang="ts">
+  import * as Card from "$lib/components/ui/card";
+  import { CalendarOff } from "@lucide/svelte";
+
   type Props = {
     message: string;
-    imageSrc: string;
+    description: string;
   };
-
-  let { message, imageSrc }: Props = $props();
+  let { message, description }: Props = $props();
 </script>
 
-<div class="grid h-full">
-  <div class="space-y-2 place-self-center text-center">
-    <img alt="funny penguin" class="mx-auto max-w-1/2" src={imageSrc} />
-    <h2 class="text-2xl font-bold">{message}</h2>
-    <h3 class="text-lg">
-      in the meantime, wanna follow our <a
-        class="text-blue-500 underline"
-        href="https://instagram.com/linsocunsw">instagram</a
-      >?
-    </h3>
-  </div>
+<div class="flex h-full items-center justify-center p-4 sm:p-6 md:p-8">
+  <Card.Root class="w-full max-w-md text-center">
+    <Card.Content class="p-6">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+        <CalendarOff class="h-8 w-8 text-muted-foreground" />
+      </div>
+      <h2 class="mt-4 text-2xl font-bold tracking-tight">{message}</h2>
+      <p class="mt-2 text-muted-foreground">{description}</p>
+    </Card.Content>
+  </Card.Root>
 </div>

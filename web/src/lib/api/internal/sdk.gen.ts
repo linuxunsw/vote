@@ -44,9 +44,6 @@ import type {
   SubmitVoteData,
   SubmitVoteResponses,
   SubmitVoteErrors,
-  GetHealthData,
-  GetHealthResponses,
-  GetHealthErrors,
 } from "./types.gen";
 import {
   zGetBallotData,
@@ -63,7 +60,6 @@ import {
   zDeleteVoteData,
   zGetVoteData,
   zSubmitVoteData,
-  zGetHealthData,
 } from "./zod.gen";
 import { client } from "./client.gen";
 import {
@@ -72,7 +68,6 @@ import {
   submitOtpResponseTransformer,
   getElectionStateResponseTransformer,
   getVoteResponseTransformer,
-  getHealthResponseTransformer,
 } from "./transformers.gen";
 
 export type Options<
@@ -449,21 +444,5 @@ export const submitVote = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
-  });
-};
-
-/**
- * Get health
- */
-export const getHealth = <ThrowOnError extends boolean = false>(
-  options?: Options<GetHealthData, ThrowOnError>,
-) => {
-  return (options?.client ?? client).get<GetHealthResponses, GetHealthErrors, ThrowOnError>({
-    requestValidator: async (data) => {
-      return await zGetHealthData.parseAsync(data);
-    },
-    responseTransformer: getHealthResponseTransformer,
-    url: "/health",
-    ...options,
   });
 };

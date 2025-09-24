@@ -121,10 +121,6 @@ export type GetElectionStateResponseBody = {
 };
 
 export type HealthOutput = {
-  /**
-   * A URL to the JSON Schema for this object.
-   */
-  readonly $schema?: string;
   checked: Date;
   details?: {
     [key: string]: CheckResult;
@@ -147,7 +143,9 @@ export type Nomination = {
   created_at: Date;
   discord_username: string;
   election_id: string;
-  executive_roles: Array<string> | null;
+  executive_roles: Array<
+    "president" | "secretary" | "treasurer" | "arc_delegate" | "edi_officer" | "grievance_officer"
+  > | null;
   nomination_id: string;
   updated_at: Date;
   url?: string;
@@ -371,17 +369,6 @@ export type GetElectionStateResponseBodyWritable = {
   state_created_at?: Date;
 };
 
-export type HealthOutputWritable = {
-  checked: Date;
-  details?: {
-    [key: string]: CheckResult;
-  };
-  health_status: "up" | "down" | "unknown";
-  info?: {
-    [key: string]: unknown;
-  };
-};
-
 export type NominationWritable = {
   candidate_name: string;
   candidate_statement: string;
@@ -390,7 +377,9 @@ export type NominationWritable = {
   created_at: Date;
   discord_username: string;
   election_id: string;
-  executive_roles: Array<string> | null;
+  executive_roles: Array<
+    "president" | "secretary" | "treasurer" | "arc_delegate" | "edi_officer" | "grievance_officer"
+  > | null;
   nomination_id: string;
   updated_at: Date;
   url?: string;
@@ -866,31 +855,6 @@ export type SubmitVoteResponses = {
 };
 
 export type SubmitVoteResponse = SubmitVoteResponses[keyof SubmitVoteResponses];
-
-export type GetHealthData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/health";
-};
-
-export type GetHealthErrors = {
-  /**
-   * Error
-   */
-  default: ErrorModel;
-};
-
-export type GetHealthError = GetHealthErrors[keyof GetHealthErrors];
-
-export type GetHealthResponses = {
-  /**
-   * OK
-   */
-  200: HealthOutput;
-};
-
-export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
 export type ClientOptions = {
   baseUrl: "http://localhost:8888" | (string & {});

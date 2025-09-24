@@ -1,15 +1,16 @@
 <script lang="ts">
-  import * as Form from "$lib/components/ui/form/index.js";
-  import { Input } from "$lib/components/ui/input";
-  import { Textarea } from "$lib/components/ui/textarea";
-  import { Checkbox } from "$lib/components/ui/checkbox";
-  import { defaults, superForm } from "sveltekit-superforms";
-  import { zod4Client } from "sveltekit-superforms/adapters";
   import {
     submitNomination,
     zSubmitNominationWritable,
     type SubmitNominationWritable,
   } from "$lib/api";
+  import * as Card from "$lib/components/ui/card";
+  import { Checkbox } from "$lib/components/ui/checkbox";
+  import * as Form from "$lib/components/ui/form/index.js";
+  import { Input } from "$lib/components/ui/input";
+  import { Textarea } from "$lib/components/ui/textarea";
+  import { defaults, superForm } from "sveltekit-superforms";
+  import { zod4Client } from "sveltekit-superforms/adapters";
 
   const superFormsAdapter = zod4Client(zSubmitNominationWritable);
 
@@ -22,133 +23,170 @@
     { id: "grievance_officer", label: "Grievance Officer" },
   ] as const;
 
+  function buildSubmitPayload(data: Partial<SubmitNominationWritable>): SubmitNominationWritable {
+    return {
+      candidate_name: data.candidate_name ?? "",
+      contact_email: data.contact_email ?? "",
+      discord_username: data.discord_username ?? "",
+      executive_roles: data.executive_roles ?? [],
+      candidate_statement: data.candidate_statement ?? "",
+      url: data.url ?? undefined,
+    };
+  }
+
   type Props = {
     nomination?: SubmitNominationWritable;
     onsuccess: () => void;
     oncancel: () => void;
   };
+  let { nomination, onsuccess, oncancel }: Props = $props();
 
-  let {
-    nomination = {
-      candidate_name: "",
-      contact_email: "",
-      discord_username: "",
-      executive_roles: [],
-      candidate_statement: "",
-      url: undefined,
-    },
-    onsuccess,
-    oncancel,
-  }: Props = $props();
+  const form = superForm(
+    defaults(
+      nomination ?? {
+        candidate_name: "",
+        contact_email: "",
+        discord_username: "",
+        executive_roles: [],
+        candidate_statement: "",
+        url: undefined,
+      },
+      superFormsAdapter,
+    ),
+    {
+      validators: superFormsAdapter,
+      SPA: true,
+      async onUpdate({ form }) {
+        if (!form.valid) return;
 
-  const form = superForm(defaults(nomination, superFormsAdapter), {
-    SPA: true,
-    validators: superFormsAdapter,
-    async onUpdate({ form }) {
-      if (!form.valid) return;
-      const { error } = await submitNomination({ body: form.data });
-      if (error) {
-        // TODO
-        return;
-      }
-      onsuccess();
+        const payload = buildSubmitPayload(form.data as Partial<SubmitNominationWritable>);
+        const { error } = await submitNomination({ body: payload });
+        if (error) {
+          // TODO: Display a toast notification on error
+          console.error(error);
+          return;
+        }
+        onsuccess();
+      },
     },
-  });
+  );
   const { form: formData, enhance } = form;
 
-  function addExecRole(id: NonNullable<SubmitNominationWritable["executive_roles"]>[number]) {
-    $formData.executive_roles = [...($formData.executive_roles ?? []), id];
-  }
-
-  function removeExecRole(id: string) {
-    $formData.executive_roles = ($formData.executive_roles ?? []).filter((i) => i !== id);
+  function handleCheckedChange(
+    checked: boolean,
+    id: NonNullable<SubmitNominationWritable["executive_roles"]>[number],
+  ) {
+    const currentRoles = $formData.executive_roles ?? [];
+    if (checked) {
+      $formData.executive_roles = [...currentRoles, id];
+    } else {
+      $formData.executive_roles = currentRoles.filter((role) => role !== id);
+    }
   }
 </script>
 
-<form method="POST" use:enhance>
-  <Form.Field {form} name="candidate_name">
-    <Form.Control>
-      {#snippet children({ props })}
-        <Form.Label>Name</Form.Label>
-        <Input {...props} bind:value={$formData.candidate_name} />
-      {/snippet}
-    </Form.Control>
-    <Form.FieldErrors />
-  </Form.Field>
-
-  <Form.Field {form} name="contact_email">
-    <Form.Control>
-      {#snippet children({ props })}
-        <Form.Label>Email</Form.Label>
-        <Input {...props} bind:value={$formData.contact_email} />
-      {/snippet}
-    </Form.Control>
-    <Form.FieldErrors />
-  </Form.Field>
-
-  <Form.Field {form} name="discord_username">
-    <Form.Control>
-      {#snippet children({ props })}
-        <Form.Label>Discord Username</Form.Label>
-        <Input {...props} bind:value={$formData.discord_username} />
-      {/snippet}
-    </Form.Control>
-    <Form.FieldErrors />
-  </Form.Field>
-
-  <Form.Fieldset {form} name="executive_roles" class="space-y-0">
-    <Form.Legend class="mb-1.5 text-sm">Nominating For</Form.Legend>
-    <div class="space-y-2">
-      {#each execRoleItems as item (item.id)}
-        {@const checked = ($formData.executive_roles ?? []).includes(item.id)}
-        <div class="flex flex-row items-start space-x-3">
+<Card.Root>
+  <Card.Header>
+    <Card.Title class="text-2xl">{nomination ? "Edit Your" : "Submit a"} Nomination</Card.Title>
+    <Card.Description>
+      Fill out the form below to run for one or more executive roles.
+    </Card.Description>
+  </Card.Header>
+  <Card.Content>
+    <form method="POST" use:enhance class="grid gap-6">
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <Form.Field {form} name="candidate_name">
           <Form.Control>
             {#snippet children({ props })}
-              <Checkbox
-                {...props}
-                {checked}
-                value={item.id}
-                onCheckedChange={(v) => {
-                  if (v) {
-                    addExecRole(item.id);
-                  } else {
-                    removeExecRole(item.id);
-                  }
-                }}
-              />
-              <Form.Label class="font-normal">
-                {item.label}
-              </Form.Label>
+              <Form.Label>Full Name</Form.Label>
+              <Input {...props} bind:value={$formData.candidate_name} />
             {/snippet}
           </Form.Control>
+          <Form.FieldErrors />
+        </Form.Field>
+
+        <Form.Field {form} name="contact_email">
+          <Form.Control>
+            {#snippet children({ props })}
+              <Form.Label>Contact Email</Form.Label>
+              <Input {...props} type="email" bind:value={$formData.contact_email} />
+            {/snippet}
+          </Form.Control>
+          <Form.FieldErrors />
+        </Form.Field>
+
+        <Form.Field {form} name="discord_username">
+          <Form.Control>
+            {#snippet children({ props })}
+              <Form.Label>Discord Username</Form.Label>
+              <Input {...props} bind:value={$formData.discord_username} />
+            {/snippet}
+          </Form.Control>
+          <Form.FieldErrors />
+        </Form.Field>
+
+        <Form.Field {form} name="url">
+          <Form.Control>
+            {#snippet children({ props })}
+              <Form.Label>URL (optional)</Form.Label>
+              <Input
+                {...props}
+                placeholder="e.g., your personal website"
+                bind:value={$formData.url}
+              />
+            {/snippet}
+          </Form.Control>
+          <Form.FieldErrors />
+        </Form.Field>
+      </div>
+
+      <Form.Fieldset {form} name="executive_roles">
+        <Form.Legend class="text-base font-semibold">Nominating For</Form.Legend>
+        <div class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {#each execRoleItems as item (item.id)}
+            {@const checked = ($formData.executive_roles ?? []).includes(item.id)}
+            <div class="flex items-center gap-x-3">
+              <Checkbox
+                id={`role-${item.id}`}
+                {checked}
+                onCheckedChange={(v) => handleCheckedChange(!!v, item.id)}
+              />
+              <label for={`role-${item.id}`} class="text-sm leading-none font-medium">
+                {item.label}
+              </label>
+            </div>
+          {/each}
         </div>
-      {/each}
-      <Form.FieldErrors />
-    </div>
-  </Form.Fieldset>
+        <Form.FieldErrors class="mt-2" />
+      </Form.Fieldset>
 
-  <Form.Field {form} name="candidate_statement">
-    <Form.Control>
-      {#snippet children({ props })}
-        <Form.Label>Candidate Statement</Form.Label>
-        <Textarea {...props} bind:value={$formData.candidate_statement} />
-      {/snippet}
-    </Form.Control>
-    <Form.FieldErrors />
-  </Form.Field>
+      <Form.Field {form} name="candidate_statement">
+        <Form.Control>
+          {#snippet children({ props })}
+            <Form.Label>Candidate Statement</Form.Label>
+            <Textarea
+              {...props}
+              class="min-h-[120px]"
+              placeholder="Tell everyone why you'd be a great fit..."
+              bind:value={$formData.candidate_statement}
+            />
+            <Form.Description
+              class={$formData.candidate_statement.length >
+              (zSubmitNominationWritable.shape.candidate_statement.maxLength ?? Infinity)
+                ? "text-destructive"
+                : ""}
+              >{$formData.candidate_statement.length} / {zSubmitNominationWritable.shape
+                .candidate_statement.maxLength} characters</Form.Description
+            >
+          {/snippet}
+        </Form.Control>
+        <Form.FieldErrors />
+      </Form.Field>
 
-  <Form.Field {form} name="url">
-    <Form.Control>
-      {#snippet children({ props })}
-        <Form.Label>URL (optional)</Form.Label>
-        <Input
-          {...props}
-          bind:value={() => $formData.url, (v) => ($formData.url = v?.length ? v : undefined)}
-        />
-      {/snippet}
-    </Form.Control>
-    <Form.FieldErrors />
-  </Form.Field>
-  <Form.Button>Submit</Form.Button>
-  <Form.Button variant="outline" type="button" onclick={oncancel}>Cancel</Form.Button>
-</form>
+      <Card.Footer class="flex justify-end gap-2 p-0 pt-4">
+        <Form.Button variant="outline" type="button" onclick={oncancel}>Cancel</Form.Button>
+        <Form.Button type="submit">Save Nomination</Form.Button>
+      </Card.Footer>
+    </form>
+  </Card.Content>
+</Card.Root>

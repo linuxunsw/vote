@@ -4,24 +4,31 @@
 </script>
 
 {#snippet social(label: string, href: string, Icon: Component)}
-  <a {href} class="flex gap-1.5 text-muted-foreground underline hover:text-foreground">
-    <Icon />
+  <a
+    {href}
+    target="_blank"
+    rel="noreferrer"
+    class="flex items-center gap-2 text-foreground underline-offset-4 hover:underline"
+  >
+    <Icon class="h-5 w-5" />
     <span>{label}</span>
   </a>
 {/snippet}
 
-<div class="flex flex-col gap-3">
-  <p class="text-lg">
-    <strong>Vote</strong> is a web application designed to streamline the management of elections in
-    UNSW societies, starting with Linux Society.
-  </p>
+<div class="b-2 flex flex-col gap-6">
   <div class="flex flex-col gap-2">
+    <h1 class="text-4xl font-bold tracking-tight text-foreground">UNSW Linux Society Elections</h1>
+    <p class="text-lg text-muted-foreground">
+      A secure, streamlined, and transparent voting platform.
+    </p>
+  </div>
+  <p class="text-lg text-balance text-foreground">
+    <strong>Vote</strong> is a web application designed to manage elections for UNSW societies, starting
+    with LINSOC.
+  </p>
+  <div class="flex flex-wrap justify-center gap-x-6 gap-y-3">
     {@render social("Source", "https://github.com/linuxunsw/vote", Github)}
-    {@render social(
-      "spARC",
-      "https://member.arc.unsw.edu.au/s/clubdetail?clubid=0016F00004CaG1EQAV",
-      University,
-    )}
+    {@render social("Rubric", "https://campus.hellorubric.com/?s=12591", University)}
     {@render social("Discord", "https://discord.gg/7Tqz2bn8Gz", BotMessageSquare)}
     {@render social("Instagram", "https://instagram.com/linsocunsw", Instagram)}
   </div>

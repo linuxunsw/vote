@@ -209,13 +209,6 @@ export const GetElectionStateResponseBodySchema = {
 export const HealthOutputSchema = {
   additionalProperties: false,
   properties: {
-    $schema: {
-      description: "A URL to the JSON Schema for this object.",
-      examples: ["https://example.com/schemas/HealthOutput.json"],
-      format: "uri",
-      readOnly: true,
-      type: "string",
-    },
     checked: {
       format: "date-time",
       type: "string",
@@ -281,9 +274,20 @@ export const NominationSchema = {
     executive_roles: {
       examples: [["president", "secretary"]],
       items: {
+        enum: [
+          "president",
+          "secretary",
+          "treasurer",
+          "arc_delegate",
+          "edi_officer",
+          "grievance_officer",
+        ],
         type: "string",
       },
+      maxItems: 6,
+      minItems: 1,
       type: ["array", "null"],
+      uniqueItems: true,
     },
     nomination_id: {
       type: "string",
@@ -446,6 +450,7 @@ export const SubmitNominationSchema = {
     discord_username: {
       examples: ["johndoe"],
       maxLength: 32,
+      minLength: 2,
       type: "string",
     },
     executive_roles: {
@@ -786,33 +791,6 @@ export const GetElectionStateResponseBodyWritableSchema = {
   type: "object",
 } as const;
 
-export const HealthOutputWritableSchema = {
-  additionalProperties: false,
-  properties: {
-    checked: {
-      format: "date-time",
-      type: "string",
-    },
-    details: {
-      additionalProperties: {
-        $ref: "#/components/schemas/CheckResult",
-      },
-      type: "object",
-    },
-    health_status: {
-      enum: ["up", "down", "unknown"],
-      examples: ["up"],
-      type: "string",
-    },
-    info: {
-      additionalProperties: {},
-      type: "object",
-    },
-  },
-  required: ["health_status", "checked"],
-  type: "object",
-} as const;
-
 export const NominationWritableSchema = {
   additionalProperties: false,
   properties: {
@@ -847,9 +825,20 @@ export const NominationWritableSchema = {
     executive_roles: {
       examples: [["president", "secretary"]],
       items: {
+        enum: [
+          "president",
+          "secretary",
+          "treasurer",
+          "arc_delegate",
+          "edi_officer",
+          "grievance_officer",
+        ],
         type: "string",
       },
+      maxItems: 6,
+      minItems: 1,
       type: ["array", "null"],
+      uniqueItems: true,
     },
     nomination_id: {
       type: "string",
@@ -991,6 +980,7 @@ export const SubmitNominationWritableSchema = {
     discord_username: {
       examples: ["johndoe"],
       maxLength: 32,
+      minLength: 2,
       type: "string",
     },
     executive_roles: {

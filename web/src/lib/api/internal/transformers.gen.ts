@@ -6,7 +6,6 @@ import type {
   SubmitOtpResponse,
   GetElectionStateResponse,
   GetVoteResponse,
-  GetHealthResponse,
 } from "./types.gen";
 
 const nominationSchemaResponseTransformer = (data: any) => {
@@ -67,15 +66,5 @@ const voteSchemaResponseTransformer = (data: any) => {
 
 export const getVoteResponseTransformer = async (data: any): Promise<GetVoteResponse> => {
   data = voteSchemaResponseTransformer(data);
-  return data;
-};
-
-const healthOutputSchemaResponseTransformer = (data: any) => {
-  data.checked = new Date(data.checked);
-  return data;
-};
-
-export const getHealthResponseTransformer = async (data: any): Promise<GetHealthResponse> => {
-  data = healthOutputSchemaResponseTransformer(data);
   return data;
 };

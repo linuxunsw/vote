@@ -15,7 +15,7 @@
   }
 </script>
 
-<Card.Root>
+<Card.Root class="border-none bg-transparent shadow-none">
   {#if !zid}
     <LoginCardZidStage onsuccess={(providedZid) => (zid = providedZid)} />
   {:else}

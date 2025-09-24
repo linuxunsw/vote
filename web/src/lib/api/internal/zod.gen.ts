@@ -61,7 +61,6 @@ export const zGetElectionStateResponseBody = z.object({
 });
 
 export const zHealthOutput = z.object({
-  $schema: z.optional(z.url().readonly()),
   checked: z.iso.datetime(),
   details: z.optional(z.record(z.string(), zCheckResult)),
   health_status: z.enum(["up", "down", "unknown"]),
@@ -77,7 +76,22 @@ export const zNomination = z.object({
   created_at: z.iso.datetime(),
   discord_username: z.string(),
   election_id: z.string(),
-  executive_roles: z.union([z.array(z.string()), z.null()]),
+  executive_roles: z.union([
+    z
+      .array(
+        z.enum([
+          "president",
+          "secretary",
+          "treasurer",
+          "arc_delegate",
+          "edi_officer",
+          "grievance_officer",
+        ]),
+      )
+      .min(1)
+      .max(6),
+    z.null(),
+  ]),
   nomination_id: z.string(),
   updated_at: z.iso.datetime(),
   url: z.optional(z.string()),
@@ -108,7 +122,7 @@ export const zSubmitNomination = z.object({
   candidate_name: z.string().min(2).max(100),
   candidate_statement: z.string().min(50).max(2000),
   contact_email: z.email(),
-  discord_username: z.string().max(32),
+  discord_username: z.string().min(2).max(32),
   executive_roles: z.union([
     z
       .array(
@@ -211,13 +225,6 @@ export const zGetElectionStateResponseBodyWritable = z.object({
   state_created_at: z.optional(z.iso.datetime()),
 });
 
-export const zHealthOutputWritable = z.object({
-  checked: z.iso.datetime(),
-  details: z.optional(z.record(z.string(), zCheckResult)),
-  health_status: z.enum(["up", "down", "unknown"]),
-  info: z.optional(z.record(z.string(), z.unknown())),
-});
-
 export const zNominationWritable = z.object({
   candidate_name: z.string(),
   candidate_statement: z.string(),
@@ -226,7 +233,22 @@ export const zNominationWritable = z.object({
   created_at: z.iso.datetime(),
   discord_username: z.string(),
   election_id: z.string(),
-  executive_roles: z.union([z.array(z.string()), z.null()]),
+  executive_roles: z.union([
+    z
+      .array(
+        z.enum([
+          "president",
+          "secretary",
+          "treasurer",
+          "arc_delegate",
+          "edi_officer",
+          "grievance_officer",
+        ]),
+      )
+      .min(1)
+      .max(6),
+    z.null(),
+  ]),
   nomination_id: z.string(),
   updated_at: z.iso.datetime(),
   url: z.optional(z.string()),
@@ -254,7 +276,7 @@ export const zSubmitNominationWritable = z.object({
   candidate_name: z.string().min(2).max(100),
   candidate_statement: z.string().min(50).max(2000),
   contact_email: z.email(),
-  discord_username: z.string().max(32),
+  discord_username: z.string().min(2).max(32),
   executive_roles: z.union([
     z
       .array(
@@ -468,14 +490,3 @@ export const zSubmitVoteData = z.object({
  * No Content
  */
 export const zSubmitVoteResponse = z.void();
-
-export const zGetHealthData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * OK
- */
-export const zGetHealthResponse = zHealthOutput;

@@ -19,7 +19,9 @@
 
 <div class="flex min-h-svh flex-col">
   <SiteHeader />
-  <main class="mx-auto flex flex-1 flex-col space-y-4 p-4 md:w-2/3">
+  <main
+    class="p-y-0 p-x-4 sm:p-x-6 md:p-x-8 mx-auto flex max-w-[calc(var(--breakpoint-2xl)+2rem)] flex-1 flex-col"
+  >
     {@render children?.()}
   </main>
   <SiteFooter />
