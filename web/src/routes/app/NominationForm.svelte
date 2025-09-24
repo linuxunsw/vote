@@ -2,6 +2,7 @@
   import {
     submitNomination,
     zSubmitNominationWritable,
+    type SubmitNominationError,
     type SubmitNominationWritable,
   } from "$lib/api";
   import * as Card from "$lib/components/ui/card";
@@ -67,7 +68,6 @@
             onsuccess();
             return "Successfully submitted nomination!";
           },
-
           error: (e) => {
             return e.detail ?? "An error has occured";
             //TODO FIXME: THIS IS BREAKING UI ON ERROR

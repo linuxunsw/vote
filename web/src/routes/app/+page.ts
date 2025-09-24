@@ -1,6 +1,5 @@
 import { goto } from "$app/navigation";
-import { resolve } from "$app/paths";
-import { getNomination } from "$lib/api";
+import { getBallot, getNomination } from "$lib/api";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 
@@ -8,14 +7,19 @@ export const prerender = false;
 export const ssr = false;
 
 export const load: PageLoad = async ({ fetch }) => {
-  const { data, error: errorData } = await getNomination({ fetch });
+  const [nominationRes, ballotRes] = await Promise.all([
+    getNomination({ fetch }),
+    getBallot({ fetch }),
+  ]);
+
+  const { data: nomination, error: errorData } = nominationRes;
+  const { data: ballot } = ballotRes;
 
   if (errorData) {
     const errorCode = Number(errorData.status);
     if (errorCode === 401) {
       // logged out or session expired, redirect to login
-      // TODO: add some user feedback? like message saying "session expired" or smth
-      goto(resolve("/"));
+      goto("/?error=session_expired");
       return;
     } else if (errorCode !== 404) {
       // 404 means no nomination, which isn't a fatal error for this client
@@ -26,9 +30,7 @@ export const load: PageLoad = async ({ fetch }) => {
   // the idea is that whenever the user updates any of this stuff, the invalidateAll() function will be called, causing an update
 
   return {
-    nomination: data,
-    ballot: {
-      // TODO
-    },
+    nomination,
+    ballot,
   };
 };

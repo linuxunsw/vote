@@ -1,6 +1,14 @@
 <script lang="ts">
+  import { toast } from "svelte-sonner";
   import About from "./About.svelte";
   import LoginCard from "./LoginCard.svelte";
+  import { page } from "$app/state";
+
+  $effect(() => {
+    if (page.url.searchParams.get("error") === "session_expired") {
+      toast.warning("Your session has expired, please log in again.");
+    }
+  });
 </script>
 
 <div class="grid h-full flex-1 md:grid-cols-2">
