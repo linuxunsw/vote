@@ -52,6 +52,7 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		positions := make(map[string]string)
 
+		// if the choice was empty, skip
 		for key, val := range map[string]string{
 			"president":         m.form.GetString("president"),
 			"secretary":         m.form.GetString("secretary"),

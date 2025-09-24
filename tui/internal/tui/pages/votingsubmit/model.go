@@ -12,7 +12,7 @@ import (
 
 const (
 	successMessage = "your vote was submitted successfully! \n\nyour reference code is %s."
-	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive on discord with the following reference code: %s."
+	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive with the following reference code: %s."
 	exitMessage    = "exit with ctrl+c"
 )
 

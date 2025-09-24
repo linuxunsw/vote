@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	successMessage = "your nomination was submitted successfully! \n\nyour reference code is %s. a copy of your nomination has been submitted to your provided email address."
-	errorMessage   = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive on discord with the following reference code: %s."
-	exitMessage    = "exit with ctrl+c"
+	nominationSuccessMessage = "your nomination was submitted successfully! \n\nyour reference code is %s. a copy of your nomination has been submitted to your provided email address."
+	errorMessage             = "something went wrong :( \n\nplease try again later. if you are still encountering issues, please contact a society executive on discord with the following reference code: %s."
+	exitMessage              = "exit with ctrl+c"
 )
 
 type submitModel struct {
@@ -67,7 +67,7 @@ func (m *submitModel) View() string {
 	if m.error != nil {
 		content = fmt.Sprintf(errorMessage, m.refCode)
 	} else {
-		content = fmt.Sprintf(successMessage, m.refCode)
+		content = fmt.Sprintf(nominationSuccessMessage, m.refCode)
 	}
 
 	exit := styles.ExitMessageStyle.Render(exitMessage)

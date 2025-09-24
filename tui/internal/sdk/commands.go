@@ -16,6 +16,7 @@ import (
 
 var (
 	ErrUnauthorised error = errors.New("your session has expired, please log in again")
+	ErrForbidden    error = errors.New("you aren't authorised to vote! please check if you are a society member via rubric and contact a society executive for more help")
 )
 
 func createIPRequestEditor(ip string) RequestEditorFn {
@@ -85,8 +86,14 @@ func SubmitOTPCmd(c *ClientWithIP, zID string, otp string) tea.Cmd {
 			}
 		}
 
-		if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
-			respID := resp.HTTPResponse.Header.Get("X-Request-ID")
+		respID := resp.HTTPResponse.Header.Get("X-Request-ID")
+		if resp.StatusCode() == http.StatusForbidden {
+			return ServerErrMsg{
+				StatusCode: resp.StatusCode(),
+				RespID:     respID,
+				Error:      ErrForbidden,
+			}
+		} else if resp.StatusCode() != http.StatusOK && resp.ApplicationproblemJSONDefault != nil {
 			err := buildError(*resp.ApplicationproblemJSONDefault)
 
 			return ServerErrMsg{
