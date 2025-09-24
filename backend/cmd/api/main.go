@@ -27,6 +27,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/spf13/cobra"
 )
 
