@@ -21,7 +21,10 @@ export default defineConfig({
       enums: "javascript",
       name: "@hey-api/typescript",
     },
-    "zod",
+    {
+      name: "zod",
+      compatibilityVersion: 3,
+    },
     {
       name: "@hey-api/sdk",
       validator: {

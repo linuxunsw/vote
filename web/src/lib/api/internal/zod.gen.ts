@@ -3,50 +3,50 @@
 import { z } from "zod";
 
 export const zCheckResult = z.object({
-  error: z.optional(z.unknown()),
+  error: z.unknown().optional(),
   status: z.string(),
-  timestamp: z.optional(z.iso.datetime()),
+  timestamp: z.string().datetime().optional(),
 });
 
 export const zCreateElectionInputBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   name: z.string(),
 });
 
 export const zCreateElectionResponseBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   election_id: z.string(),
 });
 
 export const zElectionMemberListSetInputBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   zids: z.union([z.array(z.string()), z.null()]),
 });
 
 export const zErrorDetail = z.object({
-  location: z.optional(z.string()),
-  message: z.optional(z.string()),
-  value: z.optional(z.unknown()),
+  location: z.string().optional(),
+  message: z.string().optional(),
+  value: z.unknown().optional(),
 });
 
 export const zErrorModel = z.object({
-  $schema: z.optional(z.url().readonly()),
-  detail: z.optional(z.string()),
-  errors: z.optional(z.union([z.array(zErrorDetail), z.null()])),
-  instance: z.optional(z.url()),
-  status: z.optional(z.coerce.bigint()),
-  title: z.optional(z.string()),
-  type: z.optional(z.url()).default("about:blank"),
+  $schema: z.string().url().readonly().optional(),
+  detail: z.string().optional(),
+  errors: z.union([z.array(zErrorDetail), z.null()]).optional(),
+  instance: z.string().url().optional(),
+  status: z.coerce.bigint().optional(),
+  title: z.string().optional(),
+  type: z.string().url().optional().default("about:blank"),
 });
 
 export const zGenerateOtpInputBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   zid: z.string().regex(/^z[0-9]{7}$/),
 });
 
 export const zGetElectionStateResponseBody = z.object({
-  $schema: z.optional(z.url().readonly()),
-  election_id: z.optional(z.string()),
+  $schema: z.string().url().readonly().optional(),
+  election_id: z.string().optional(),
   state: z.enum([
     "NO_ELECTION",
     "CLOSED",
@@ -57,23 +57,23 @@ export const zGetElectionStateResponseBody = z.object({
     "RESULTS",
     "END",
   ]),
-  state_created_at: z.optional(z.iso.datetime()),
+  state_created_at: z.string().datetime().optional(),
 });
 
 export const zHealthOutput = z.object({
-  checked: z.iso.datetime(),
-  details: z.optional(z.record(z.string(), zCheckResult)),
+  checked: z.string().datetime(),
+  details: z.record(zCheckResult).optional(),
   health_status: z.enum(["up", "down", "unknown"]),
-  info: z.optional(z.record(z.string(), z.unknown())),
+  info: z.record(z.unknown()).optional(),
 });
 
 export const zNomination = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   candidate_name: z.string(),
   candidate_statement: z.string(),
   candidate_zid: z.string(),
   contact_email: z.string(),
-  created_at: z.iso.datetime(),
+  created_at: z.string().datetime(),
   discord_username: z.string(),
   election_id: z.string(),
   executive_roles: z.union([
@@ -93,35 +93,35 @@ export const zNomination = z.object({
     z.null(),
   ]),
   nomination_id: z.string(),
-  updated_at: z.iso.datetime(),
-  url: z.optional(z.string()),
+  updated_at: z.string().datetime(),
+  url: z.string().optional(),
 });
 
 export const zPublicNomination = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   candidate_name: z.string(),
   candidate_statement: z.string(),
-  created_at: z.iso.datetime(),
+  created_at: z.string().datetime(),
   discord_username: z.string(),
   election_id: z.string(),
   executive_roles: z.union([z.array(z.string()), z.null()]),
   nomination_id: z.string(),
-  updated_at: z.iso.datetime(),
-  url: z.optional(z.string()),
+  updated_at: z.string().datetime(),
+  url: z.string().optional(),
 });
 
 export const zPublicBallot = z.object({
-  $schema: z.optional(z.url().readonly()),
-  candidates: z.record(z.string(), z.union([z.array(zPublicNomination), z.null()])),
+  $schema: z.string().url().readonly().optional(),
+  candidates: z.record(z.union([z.array(zPublicNomination), z.null()])),
   election_id: z.string(),
   has_voted: z.boolean(),
 });
 
 export const zSubmitNomination = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   candidate_name: z.string().min(2).max(100),
   candidate_statement: z.string().min(50).max(2000),
-  contact_email: z.email(),
+  contact_email: z.string().email(),
   discord_username: z.string().min(2).max(32),
   executive_roles: z.union([
     z
@@ -139,34 +139,34 @@ export const zSubmitNomination = z.object({
       .max(6),
     z.null(),
   ]),
-  url: z.optional(z.url()),
+  url: z.string().url().optional(),
 });
 
 export const zSubmitNominationResponseBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   nomination_id: z.string(),
 });
 
 export const zSubmitOtpInputBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   otp: z.string().regex(/^[0-9]{6}$/),
   zid: z.string().regex(/^z[0-9]{7}$/),
 });
 
 export const zSubmitOtpResponseBody = z.object({
-  $schema: z.optional(z.url().readonly()),
-  expiry: z.iso.datetime(),
+  $schema: z.string().url().readonly().optional(),
+  expiry: z.string().datetime(),
   is_admin: z.boolean(),
   zid: z.string().regex(/^z[0-9]{7}$/),
 });
 
 export const zSubmitVoteBody = z.object({
-  $schema: z.optional(z.url().readonly()),
-  positions: z.record(z.string(), z.string()),
+  $schema: z.string().url().readonly().optional(),
+  positions: z.record(z.string()),
 });
 
 export const zTransitionElectionStateBody = z.object({
-  $schema: z.optional(z.url().readonly()),
+  $schema: z.string().url().readonly().optional(),
   state: z.enum([
     "CLOSED",
     "NOMINATIONS_OPEN",
@@ -179,10 +179,10 @@ export const zTransitionElectionStateBody = z.object({
 });
 
 export const zVote = z.object({
-  $schema: z.optional(z.url().readonly()),
-  created_at: z.iso.datetime(),
-  positions: z.record(z.string(), z.string()),
-  updated_at: z.iso.datetime(),
+  $schema: z.string().url().readonly().optional(),
+  created_at: z.string().datetime(),
+  positions: z.record(z.string()),
+  updated_at: z.string().datetime(),
 });
 
 export const zCreateElectionInputBodyWritable = z.object({
@@ -198,12 +198,12 @@ export const zElectionMemberListSetInputBodyWritable = z.object({
 });
 
 export const zErrorModelWritable = z.object({
-  detail: z.optional(z.string()),
-  errors: z.optional(z.union([z.array(zErrorDetail), z.null()])),
-  instance: z.optional(z.url()),
-  status: z.optional(z.coerce.bigint()),
-  title: z.optional(z.string()),
-  type: z.optional(z.url()).default("about:blank"),
+  detail: z.string().optional(),
+  errors: z.union([z.array(zErrorDetail), z.null()]).optional(),
+  instance: z.string().url().optional(),
+  status: z.coerce.bigint().optional(),
+  title: z.string().optional(),
+  type: z.string().url().optional().default("about:blank"),
 });
 
 export const zGenerateOtpInputBodyWritable = z.object({
@@ -211,7 +211,7 @@ export const zGenerateOtpInputBodyWritable = z.object({
 });
 
 export const zGetElectionStateResponseBodyWritable = z.object({
-  election_id: z.optional(z.string()),
+  election_id: z.string().optional(),
   state: z.enum([
     "NO_ELECTION",
     "CLOSED",
@@ -222,7 +222,7 @@ export const zGetElectionStateResponseBodyWritable = z.object({
     "RESULTS",
     "END",
   ]),
-  state_created_at: z.optional(z.iso.datetime()),
+  state_created_at: z.string().datetime().optional(),
 });
 
 export const zNominationWritable = z.object({
@@ -230,7 +230,7 @@ export const zNominationWritable = z.object({
   candidate_statement: z.string(),
   candidate_zid: z.string(),
   contact_email: z.string(),
-  created_at: z.iso.datetime(),
+  created_at: z.string().datetime(),
   discord_username: z.string(),
   election_id: z.string(),
   executive_roles: z.union([
@@ -250,24 +250,24 @@ export const zNominationWritable = z.object({
     z.null(),
   ]),
   nomination_id: z.string(),
-  updated_at: z.iso.datetime(),
-  url: z.optional(z.string()),
+  updated_at: z.string().datetime(),
+  url: z.string().optional(),
 });
 
 export const zPublicNominationWritable = z.object({
   candidate_name: z.string(),
   candidate_statement: z.string(),
-  created_at: z.iso.datetime(),
+  created_at: z.string().datetime(),
   discord_username: z.string(),
   election_id: z.string(),
   executive_roles: z.union([z.array(z.string()), z.null()]),
   nomination_id: z.string(),
-  updated_at: z.iso.datetime(),
-  url: z.optional(z.string()),
+  updated_at: z.string().datetime(),
+  url: z.string().optional(),
 });
 
 export const zPublicBallotWritable = z.object({
-  candidates: z.record(z.string(), z.union([z.array(zPublicNominationWritable), z.null()])),
+  candidates: z.record(z.union([z.array(zPublicNominationWritable), z.null()])),
   election_id: z.string(),
   has_voted: z.boolean(),
 });
@@ -275,7 +275,7 @@ export const zPublicBallotWritable = z.object({
 export const zSubmitNominationWritable = z.object({
   candidate_name: z.string().min(2).max(100),
   candidate_statement: z.string().min(50).max(2000),
-  contact_email: z.email(),
+  contact_email: z.string().email(),
   discord_username: z.string().min(2).max(32),
   executive_roles: z.union([
     z
@@ -293,7 +293,7 @@ export const zSubmitNominationWritable = z.object({
       .max(6),
     z.null(),
   ]),
-  url: z.optional(z.url()),
+  url: z.string().url().optional(),
 });
 
 export const zSubmitNominationResponseBodyWritable = z.object({
@@ -306,13 +306,13 @@ export const zSubmitOtpInputBodyWritable = z.object({
 });
 
 export const zSubmitOtpResponseBodyWritable = z.object({
-  expiry: z.iso.datetime(),
+  expiry: z.string().datetime(),
   is_admin: z.boolean(),
   zid: z.string().regex(/^z[0-9]{7}$/),
 });
 
 export const zSubmitVoteBodyWritable = z.object({
-  positions: z.record(z.string(), z.string()),
+  positions: z.record(z.string()),
 });
 
 export const zTransitionElectionStateBodyWritable = z.object({
@@ -328,15 +328,15 @@ export const zTransitionElectionStateBodyWritable = z.object({
 });
 
 export const zVoteWritable = z.object({
-  created_at: z.iso.datetime(),
-  positions: z.record(z.string(), z.string()),
-  updated_at: z.iso.datetime(),
+  created_at: z.string().datetime(),
+  positions: z.record(z.string()),
+  updated_at: z.string().datetime(),
 });
 
 export const zGetBallotData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -346,8 +346,8 @@ export const zGetBallotResponse = zPublicBallot;
 
 export const zCreateElectionData = z.object({
   body: zCreateElectionInputBodyWritable,
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -360,7 +360,7 @@ export const zSetElectionMembersData = z.object({
   path: z.object({
     election_id: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -369,9 +369,9 @@ export const zSetElectionMembersData = z.object({
 export const zSetElectionMembersResponse = z.void();
 
 export const zDeleteNominationData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -380,9 +380,9 @@ export const zDeleteNominationData = z.object({
 export const zDeleteNominationResponse = z.void();
 
 export const zGetNominationData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -392,8 +392,8 @@ export const zGetNominationResponse = zNomination;
 
 export const zSubmitNominationData = z.object({
   body: zSubmitNominationWritable,
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -402,11 +402,11 @@ export const zSubmitNominationData = z.object({
 export const zSubmitNominationResponse = zSubmitNominationResponseBody;
 
 export const zGetPublicNominationData = z.object({
-  body: z.optional(z.never()),
+  body: z.never().optional(),
   path: z.object({
     nomination_id: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.never().optional(),
 });
 
 /**
@@ -416,8 +416,8 @@ export const zGetPublicNominationResponse = zPublicNomination;
 
 export const zGenerateOtpData = z.object({
   body: zGenerateOtpInputBodyWritable,
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -427,8 +427,8 @@ export const zGenerateOtpResponse = z.void();
 
 export const zSubmitOtpData = z.object({
   body: zSubmitOtpInputBodyWritable,
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -437,9 +437,9 @@ export const zSubmitOtpData = z.object({
 export const zSubmitOtpResponse = zSubmitOtpResponseBody;
 
 export const zGetElectionStateData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -449,8 +449,8 @@ export const zGetElectionStateResponse = zGetElectionStateResponseBody;
 
 export const zAdminTransitionElectionStateData = z.object({
   body: zTransitionElectionStateBodyWritable,
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -459,9 +459,9 @@ export const zAdminTransitionElectionStateData = z.object({
 export const zAdminTransitionElectionStateResponse = z.void();
 
 export const zDeleteVoteData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -470,9 +470,9 @@ export const zDeleteVoteData = z.object({
 export const zDeleteVoteResponse = z.void();
 
 export const zGetVoteData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  body: z.never().optional(),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
@@ -482,8 +482,8 @@ export const zGetVoteResponse = zVote;
 
 export const zSubmitVoteData = z.object({
   body: zSubmitVoteBodyWritable,
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  path: z.never().optional(),
+  query: z.never().optional(),
 });
 
 /**
