@@ -11,6 +11,7 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { defaults, superForm } from "sveltekit-superforms";
   import { zod4Client } from "sveltekit-superforms/adapters";
+  import { toast } from "svelte-sonner";
 
   const superFormsAdapter = zod4Client(zSubmitNominationWritable);
 
@@ -60,13 +61,18 @@
         if (!form.valid) return;
 
         const payload = buildSubmitPayload(form.data as Partial<SubmitNominationWritable>);
-        const { error } = await submitNomination({ body: payload });
-        if (error) {
-          // TODO: Display a toast notification on error
-          console.error(error);
-          return;
-        }
-        onsuccess();
+        toast.promise(submitNomination({ body: payload, throwOnError: true }), {
+          loading: "submitting...",
+          success: () => {
+            onsuccess();
+            return "Successfully submitted nomination!";
+          },
+
+          error: (data) => {
+            return data.error?.title ?? "An error has occured";
+            //TODO FIXME: THIS IS BREAKING UI ON ERROR
+          },
+        });
       },
     },
   );

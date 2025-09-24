@@ -27,6 +27,7 @@
 
     reader.onerror = (e) => {
       // TODO: error feedback
+      console.error(e);
     };
 
     reader.readAsText(file);

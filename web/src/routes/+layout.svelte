@@ -1,6 +1,7 @@
 <script lang="ts">
   import "../app.css";
   import { ModeWatcher } from "mode-watcher";
+  import { Toaster } from "$lib/components/ui/sonner/index.js";
   import SEO from "$lib/components/SEO.svelte";
   import { authState } from "$lib/stores.svelte";
   import SiteFooter from "$lib/components/site-footer.svelte";
@@ -13,6 +14,7 @@
   });
 </script>
 
+<Toaster richColors />
 <ModeWatcher />
 
 <SEO title="LinSoc Vote" />
