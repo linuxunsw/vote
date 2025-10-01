@@ -1,0 +1,32 @@
+name: Gotest
+on:
+  workflow_call:
+    inputs:
+      subrepo:
+        required: true
+        type: string
+jobs:
+  go-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./${{ inputs.subrepo }}/go.mod
+          cache-dependency-path: ./${{ inputs.subrepo }}/go.sum
+
+        # We could do this with service containers, but then we wouldn't be able to only run it when we're testing the backend.
+      - uses: ikalnytskyi/action-setup-postgres@10ab8a56cc77b4823c2bfa57b1d4dd5605ef0481 # v7
+        if: ${{ inputs.subrepo }} == 'backend'
+        with:
+          username: admin
+          password: admin
+          database: vote
+          ssl: false
+
+      - name: Run go tests
+        working-directory: ./${{ inputs.subrepo }}
+        run: go test github.com/${{ github.repository}}/${{ inputs.subrepo }}/...

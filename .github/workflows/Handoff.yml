@@ -52,6 +52,13 @@ jobs:
     with:
       subrepo: backend
 
+  backend-gotest:
+    needs: handoff
+    if: contains(needs.handoff.outputs.category, 'Go') && contains(needs.handoff.outputs.directory, 'backend')
+    uses: ./.github/workflows/Gotest.yml
+    with:
+      subrepo: backend
+
   web-tsc:
     needs: handoff
     uses: ./.github/workflows/Tsc.yml
