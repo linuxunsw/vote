@@ -41,9 +41,19 @@ func TestBallotGet(t *testing.T) {
 		"z0000003",
 	})
 
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "NOMINATIONS_OPEN"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
 	_ = cookiePer(t, api, mailer, "z0000000", "John Doe", []string{"president", "secretary"})
 	_ = cookiePer(t, api, mailer, "z0000001", "Joe Blow", []string{"president"})
 	_ = cookiePer(t, api, mailer, "z0000002", "grieve man", []string{"grievance_officer", "treasurer"})
+
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "NOMINATIONS_CLOSED"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "VOTING_OPEN"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
 
 	expectedMap := map[string](map[string]bool){
 		"president":         {"John Doe": false, "Joe Blow": false},

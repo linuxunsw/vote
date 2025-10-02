@@ -18,6 +18,10 @@ func TestNominationSubmit(t *testing.T) {
 		zid,
 	})
 
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "NOMINATIONS_OPEN"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
+
 	resp := generateOTPSubmit(t, api, mailer, zid)
 	res := resp.Result()
 	cookie := extractCookieHeader(res.Header)
@@ -71,6 +75,7 @@ func TestNominationSubmit(t *testing.T) {
 	_ = json.Unmarshal(resp.Body.Bytes(), &publicNom)
 	expectedPublicNom := models.PublicNomination{
 		ElectionID:         electionId,
+		NominationId: nominationId,
 		CandidateName:      "John Doe",
 		DiscordUsername:   "johndoe#1234",
 		ExecutiveRoles: []string{"president", "secretary"},
