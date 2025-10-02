@@ -25,6 +25,10 @@ func TestVoteSubmit(t *testing.T) {
 		zid1,
 	})
 
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "NOMINATIONS_OPEN"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
+
 	res0 := generateOTPSubmit(t, api, mailer, zid0).Result()
 	cookie0 := extractCookieHeader(res0.Header)
 	resp := api.Put("/api/v1/nomination", cookie0, map[string]any{
@@ -47,6 +51,13 @@ func TestVoteSubmit(t *testing.T) {
 
 	now0 := time.Now().Truncate(time.Second)
 	*nowProvider = func() time.Time { return now0 }
+
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "NOMINATIONS_CLOSED"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
+	if code := transitionElectionState(t, api, cfg.JWT, TestingDummyJWTAdmin, "VOTING_OPEN"); code != 204 {
+		t.Fatalf("expected 204 No Content, got %d", code)
+	}
 
 	resp = api.Put("/api/v1/vote", cookie1, map[string]any{
 		"positions": map[string]string{
