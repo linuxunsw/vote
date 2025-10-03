@@ -1,13 +1,13 @@
 -- +goose Up
-create table "election_member_list" (
-    "zid" text,
-    "election_id" uuid,
+create table election_member_list (
+    zid text,
+    election_id uuid,
 
-    primary key ("election_id", "zid")
+    primary key (election_id, zid)
 );
 
 -- NO_ELECTION is external
-create type "election_status" as enum (
+create type election_status as enum (
     'CLOSED',
     'NOMINATIONS_OPEN',
     'NOMINATIONS_CLOSED',
@@ -17,28 +17,28 @@ create type "election_status" as enum (
     'END'
 );
 
-create table "elections" (
-    "election_id" uuid primary key,
-    "name" text not null,
-    
-    "state" election_status not null,
+create table elections (
+    election_id uuid primary key,
+    name text not null,
 
-    "created_at" timestamptz not null,
+    state election_status not null,
 
-    "nominations_open_at" timestamptz,
-    "nominations_close_at" timestamptz,
+    created_at timestamptz not null,
 
-    "voting_open_at" timestamptz,
-    "voting_close_at" timestamptz,
+    nominations_open_at timestamptz,
+    nominations_close_at timestamptz,
 
-    "results_published_at" timestamptz,
-    "ended_at" timestamptz
+    voting_open_at timestamptz,
+    voting_close_at timestamptz,
+
+    results_published_at timestamptz,
+    ended_at timestamptz
 );
 
-create index "elections_created_at_idx" on "elections" ("created_at");
+create index elections_created_at_idx on elections (created_at);
 
 -- +goose Down
-drop table "election_member_list";
-drop table "elections";
-drop type "election_status";
-drop index "elections_created_at_idx";
+drop table election_member_list;
+drop table elections;
+drop type election_status;
+drop index elections_created_at_idx;
