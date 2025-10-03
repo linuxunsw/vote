@@ -107,13 +107,16 @@ func TestVoteSubmit(t *testing.T) {
 		t.Fatalf("expected body, got error %v", err)
 	}
 
+	body.CreatedAt = normaliseTime(body.CreatedAt)
+	body.UpdatedAt = normaliseTime(body.UpdatedAt)
+
 	unchangedResp := models.Vote{
 		Positions: map[string]string{
 			"president": nominationId0,
 			"secretary": nominationId0,
 		},
-		CreatedAt: now0,
-		UpdatedAt: now0,
+		CreatedAt: normaliseTime(now0),
+		UpdatedAt: normaliseTime(now0),
 	}
 	if err := compareStructs(unchangedResp, body); err != nil {
 		t.Fatal(err)
