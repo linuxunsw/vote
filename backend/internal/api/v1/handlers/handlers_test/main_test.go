@@ -177,7 +177,7 @@ func compareStructs[T any](expected, actual T) error {
 			et := expectedField.Interface().(time.Time)
 			at := actualField.Interface().(time.Time)
 			// Treat zero times as equal only if both are zero; otherwise use Equal
-			if !(et.IsZero() && at.IsZero()) && !et.Equal(at) {
+			if (!et.IsZero() || !at.IsZero()) && !et.Equal(at) {
 				diffs = append(diffs, fmt.Sprintf("  field '%s': expected %v (type %s), got %v (type %s)",
 					field.Name, et, expectedField.Type(), at, actualField.Type()))
 			}
