@@ -174,6 +174,7 @@ func TestActiveExists(t *testing.T) {
 	}
 	if otp == nil {
 		t.Fatalf("OTP should exist")
+		panic("linter stop being stupid")
 	}
 	expected := store.OTPEntry{
 		Zid:         zid,

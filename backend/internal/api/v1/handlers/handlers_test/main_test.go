@@ -172,6 +172,18 @@ func compareStructs[T any](expected, actual T) error {
 		expectedField := expectedValue.Field(i)
 		actualField := actualValue.Field(i)
 
+		// handle time.Time
+		if expectedField.Type() == reflect.TypeOf(time.Time{}) && actualField.Type() == reflect.TypeOf(time.Time{}) {
+			et := expectedField.Interface().(time.Time)
+			at := actualField.Interface().(time.Time)
+			// Treat zero times as equal only if both are zero; otherwise use Equal
+			if (!et.IsZero() || !at.IsZero()) && !et.Equal(at) {
+				diffs = append(diffs, fmt.Sprintf("  field '%s': expected %v (type %s), got %v (type %s)",
+					field.Name, et, expectedField.Type(), at, actualField.Type()))
+			}
+			continue
+		}
+
 		// reflect.DeepEqual handles most built-in types, slices, maps, and
 		// nested structs recursively.
 		if !reflect.DeepEqual(expectedField.Interface(), actualField.Interface()) {
