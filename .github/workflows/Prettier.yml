@@ -14,8 +14,7 @@ jobs:
           fetch-depth: 0
 
       - name: prettier
-        # TODO: Ideally we would use the upstream version, but that is broken for a number of reasons.
-        uses: Zopolis4/reviewdog-action-prettier@8982f2dd22b76752053312a122a06fdba163a240
+        uses: EPMatt/reviewdog-action-prettier@f691104cbeb4b0299df971275444c64be93c03ae # v1.3.0
         with:
           fail_level: any
           filter_mode: nofilter
