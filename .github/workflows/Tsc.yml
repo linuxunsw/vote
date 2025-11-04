@@ -14,10 +14,9 @@ jobs:
           fetch-depth: 0
 
       - name: tsc
-        uses: EPMatt/reviewdog-action-tsc@89934d75ee11d1c298bce81efaa4fde6e00cc21c # v1.8.0
+        uses: EPMatt/reviewdog-action-tsc@63d923a3c5b4497671940b8874f58a404e2351b5 # v1.11.0
         with:
-          # Waiting on https://github.com/EPMatt/reviewdog-action-tsc/pull/282 to use fail_level instead
-          fail_on_error: true
+          fail_level: any
           filter_mode: nofilter
           reporter: github-check
           workdir: ${{ inputs.subrepo }}
