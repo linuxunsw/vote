@@ -1,0 +1,35 @@
+name: Sqlfluff
+on:
+  workflow_call:
+    inputs:
+      subrepo:
+        required: true
+        type: string
+jobs:
+  sqlfluff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        # We cannot set fetch-depth to 0 because of https://github.com/yu-iskw/action-sqlfluff/issues/74
+
+      - name: sqlfluff
+        id: lint-sql
+        uses: yu-iskw/action-sqlfluff@d87c3774e8bd71db93439ab48dbc6f4266b51857 # v5.0.1
+        with:
+          # The action only checks changed files by default, so we bypass that by making it check against the commit where sql files were first added.
+          # This does not point to the correct commit currently, but it mostly gets the job done.
+          github_base_ref: main~40
+          dialect: postgres
+          # Waiting on https://github.com/yu-iskw/action-sqlfluff/issues/149 to be able to use fail_level
+          filter_mode: nofilter
+          reporter: github-check
+          paths: ${{ inputs.subrepo }}
+
+        # We need this work around because of https://github.com/yu-iskw/action-sqlfluff/issues/39
+      - name: Fail if any violations found
+        run: |
+          if [ "$(cat sqlfluff-lint.json | jq -r '.[].violations' | uniq)" = '[]' ]; then
+            echo "No violations found"
+          else
+            exit 1
+          fi
