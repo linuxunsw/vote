@@ -27,6 +27,8 @@ jobs:
             case $ext in
               go)
                 category+=" Go";;
+              sql)
+                category+=" SQL";;
               ts)
                 category+=" TypeScript";;
               yml)
@@ -56,6 +58,13 @@ jobs:
     needs: handoff
     if: contains(needs.handoff.outputs.category, 'Go') && contains(needs.handoff.outputs.directory, 'backend')
     uses: ./.github/workflows/Gotest.yml
+    with:
+      subrepo: backend
+
+  backend-sqlfluff:
+    needs: handoff
+    if: contains(needs.handoff.outputs.category, 'SQL') && contains(needs.handoff.outputs.directory, 'backend')
+    uses: ./.github/workflows/Sqlfluff.yml
     with:
       subrepo: backend
 
